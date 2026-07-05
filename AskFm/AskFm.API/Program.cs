@@ -48,7 +48,7 @@ public class Program
             options
                 .UseLazyLoadingProxies()
                 .UseSqlServer(ConnectionString));
-        // -------------------------------------------------        
+        // -------------------------------------------------
         // Register the repositories and services
         builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -91,7 +91,7 @@ public class Program
             });
 
         });
-        
+
 
         // Authentication & Authorization
 
@@ -155,8 +155,8 @@ public class Program
             {
                 options.DefaultAuthenticateScheme = "Bearer";
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                
-                
+
+
             })
             .AddJwtBearer( Options =>
             {
@@ -194,7 +194,7 @@ public class Program
                     {
                         var accessToken = context.Request.Query["access_token"];
                         var path = context.HttpContext.Request.Path;
-                        
+
                         if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/notificationHub"))
                         {
                             context.Token = accessToken;
@@ -204,8 +204,8 @@ public class Program
                 };
             });
         builder.Services.AddAuthorization();
-       
-       
+
+
        // Identity
         builder.Services.AddIdentity<ApplicationUser, IdentityRole<int>>(options =>
             {
@@ -215,15 +215,15 @@ public class Program
                 options.Password.RequireUppercase = true;
                 options.Password.RequireNonAlphanumeric = true;
                 options.Password.RequiredLength = 8;
-                
+
                 //Email
                 options.User.RequireUniqueEmail = true;
-                
-                // Lockout 
+
+                // Lockout
                 options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
                 options.Lockout.AllowedForNewUsers = true;
-                
+
                 // sign in options
                 options.SignIn.RequireConfirmedEmail = false;
                 options.SignIn.RequireConfirmedAccount = false;
@@ -235,16 +235,16 @@ public class Program
             })
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();
-        
+
         // Redis Cache
         builder.Services.AddStackExchangeRedisCache(options =>
         {
             options.Configuration = builder.Configuration.GetConnectionString("Redis");
             options.InstanceName = "AskFmCache";
         });
-        
+
         builder.Services.AddSingleton<RedisCacheService>();
- 
+
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
@@ -259,6 +259,7 @@ public class Program
         }
 
         app.UseHttpsRedirection();
+        app.UseStaticFiles();
 
         // Apply CORS before authentication
         app.UseCors("SignalRPolicy");

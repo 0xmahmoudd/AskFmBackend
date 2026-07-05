@@ -21,6 +21,7 @@ public interface IUserService
     Task<ServiceResult<PagedResponseDto<FollowUserDto>>> GetFollowingAsync(int userId, int page, int pageSize);
     Task<ServiceResult<bool>> IsFollowingAsync(int followerId, int targetUserId);
     Task<ServiceResult<PagedResponseDto<UserSearchResultDto>>> SearchUsersAsync(string query, int page, int pageSize);
+    Task<ServiceResult<string>> UpdateAvatarAsync(int userId, string avatarPath);
 
 
     /*

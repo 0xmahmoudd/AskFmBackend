@@ -379,6 +379,19 @@ public class UserService : IUserService
         return await ServiceResult<bool>.Success(isFollowing);
     }
 
+    public async Task<ServiceResult<string>> UpdateAvatarAsync(int userId, string avatarPath)
+    {
+        var appUser = await _unitOfWork.Users.GetByIdAsync(userId);
+        var res = await CheckNullObjectAsync<string, ApplicationUser>(appUser);
+        if (!res.success) return res;
+
+        appUser.AvatarPath = avatarPath;
+        await _unitOfWork.Users.UpdateAsync(appUser);
+        await _unitOfWork.SaveAsync();
+
+        return await ServiceResult<string>.Success(avatarPath);
+    }
+
     public async Task<ServiceResult<PagedResponseDto<UserSearchResultDto>>> SearchUsersAsync(string query, int page, int pageSize)
     {
         if (string.IsNullOrWhiteSpace(query))

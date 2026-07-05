@@ -3,6 +3,7 @@ using AskFm.BLL.Services.UserIdentityService;
 using AskFm.DAL;
 using AskFm.DAL.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AskFm.API.Controllers;
@@ -12,15 +13,20 @@ namespace AskFm.API.Controllers;
 [Authorize(AuthenticationSchemes = "Bearer")]
 public class UserController : ControllerBase
 {
+    private static readonly string[] AllowedAvatarExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+    private const long MaxAvatarSizeBytes = 5 * 1024 * 1024; // 5 MB
+
     private IUnitOfWork _unitOfWork;
     private IAuthService  _authService;
     public IUserService _userService;
+    private readonly IWebHostEnvironment _webHostEnvironment;
 
-    public UserController(IUnitOfWork unitOfWork, IAuthService authService, IUserService userService)
+    public UserController(IUnitOfWork unitOfWork, IAuthService authService, IUserService userService, IWebHostEnvironment webHostEnvironment)
     {
         _unitOfWork = unitOfWork;
         _authService = authService;
         _userService = userService;
+        _webHostEnvironment = webHostEnvironment;
     }
 
     [HttpGet]
@@ -132,6 +138,52 @@ public class UserController : ControllerBase
             return BadRequest(result.Errors);
         }
         return Ok();
+    }
+
+    [HttpPost]
+    [Route("profile/{userId}/avatar")]
+    public async Task<IActionResult> UploadAvatarAsync(int userId, IFormFile file)
+    {
+        if (!await _checkCurrentUser(userId))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, "Cannot Update this user");
+        }
+
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest("No file uploaded");
+        }
+
+        if (file.Length > MaxAvatarSizeBytes)
+        {
+            return BadRequest("File is too large. Max size is 5 MB");
+        }
+
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!AllowedAvatarExtensions.Contains(extension))
+        {
+            return BadRequest("Unsupported file type");
+        }
+
+        var avatarsFolder = Path.Combine(_webHostEnvironment.WebRootPath ?? "wwwroot", "avatars");
+        Directory.CreateDirectory(avatarsFolder);
+
+        var fileName = string.Concat("user-", userId.ToString(), "-", Guid.NewGuid().ToString("N"), extension);
+        var filePath = Path.Combine(avatarsFolder, fileName);
+
+        await using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        var relativePath = string.Concat("/avatars/", fileName);
+        var result = await _userService.UpdateAvatarAsync(userId, relativePath);
+        if (!result.success)
+        {
+            return BadRequest(result.Errors);
+        }
+
+        return Ok(new { avatarPath = relativePath });
     }
 
     [HttpGet]
