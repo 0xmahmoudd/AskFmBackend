@@ -1,3 +1,4 @@
+using AskFm.BLL.DTO;
 using AskFm.BLL.DTO.UserDTOs;
 using AskFm.DAL.Models;
 
@@ -14,12 +15,16 @@ public interface IUserService
     Task<ServiceResult<ApplicationUser>> GetCurrentUserAsync();
     Task<ServiceResult<bool>> UpdatePassword(int userId, UpdatePasswordDTO updatePasswordDto);
     Task<ServiceResult<ReadUserDTO>> ResetEmail(int userId, string updatedEmail);
-    
-    
+
+    Task<ServiceResult<PagedResponseDto<FollowUserDto>>> GetFollowersAsync(int userId, int page, int pageSize);
+    Task<ServiceResult<PagedResponseDto<FollowUserDto>>> GetFollowingAsync(int userId, int page, int pageSize);
+    Task<ServiceResult<bool>> IsFollowingAsync(int followerId, int targetUserId);
+
+
     /*
 GET Users only for now
 
  confirm email
  Helper Function: getCurrentUserId
-*/   
+*/
 }

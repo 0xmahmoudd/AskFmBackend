@@ -28,7 +28,7 @@ public class UserController : ControllerBase
     public async Task<IActionResult> GetCurrentUserAsync()
     {
         var result = await _userService.GetCurrentUserAsync();
-        
+
         if (!result.success)
         {
             return BadRequest(result.Errors);
@@ -56,7 +56,7 @@ public class UserController : ControllerBase
         }
         return Ok(result.Data);
     }
-    
+
     [HttpPost]
     [Route("profile/update/{userId}")]
     public async Task<IActionResult> UpdateUserAsync(int userId, UpdateUserDTO updatedUser)
@@ -74,7 +74,7 @@ public class UserController : ControllerBase
         var userRead = await _userService.GetUserByIdAsync(userId);
         return Ok(userRead);
     }
-    
+
     [HttpDelete]
     [Route("profile/{userId}")]
     public async Task<IActionResult> DeleteUserAsync(int userId)
@@ -84,7 +84,7 @@ public class UserController : ControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, "Cannot Remove this user");
         }
         var result = await _userService.DeleteUserAsync(userId);
-        
+
         if (!result.success)
         {
             return BadRequest(result.Errors);
@@ -112,7 +112,7 @@ public class UserController : ControllerBase
         }
         return Ok();
     }
-    
+
     [HttpPost]
     [Route("profile/{followerId}/unfollow/{targetUserId}")]
     public async Task<IActionResult> UnFollowUserAsync(int followerId, int targetUserId)
@@ -133,14 +133,56 @@ public class UserController : ControllerBase
         }
         return Ok();
     }
-    
+
+    [HttpGet]
+    [Route("profile/{userId}/followers")]
+    public async Task<IActionResult> GetFollowersAsync(int userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        var result = await _userService.GetFollowersAsync(userId, page, pageSize);
+        if (!result.success)
+        {
+            return BadRequest(result.Errors);
+        }
+        return Ok(result.Data);
+    }
+
+    [HttpGet]
+    [Route("profile/{userId}/following")]
+    public async Task<IActionResult> GetFollowingAsync(int userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        var result = await _userService.GetFollowingAsync(userId, page, pageSize);
+        if (!result.success)
+        {
+            return BadRequest(result.Errors);
+        }
+        return Ok(result.Data);
+    }
+
+    [HttpGet]
+    [Route("profile/{targetUserId}/follow-status")]
+    public async Task<IActionResult> GetFollowStatusAsync(int targetUserId)
+    {
+        var currentUser = await _userService.GetCurrentUserAsync();
+        if (!currentUser.success)
+        {
+            return BadRequest(currentUser.Errors);
+        }
+
+        var result = await _userService.IsFollowingAsync(currentUser.Data.Id, targetUserId);
+        if (!result.success)
+        {
+            return BadRequest(result.Errors);
+        }
+        return Ok(new { isFollowing = result.Data });
+    }
+
     [HttpPost]
     [Route("profile/update/pass/{userId}")]
     public async Task<IActionResult> UpdatePassword(int userId, UpdatePasswordDTO udpatePasswordDto)
     {
         if (await _checkCurrentUser(userId))
         {
-            
+
             return StatusCode(StatusCodes.Status403Forbidden, "Invalid Operation");
         }
         var result = await _userService.UpdatePassword(userId, udpatePasswordDto);
@@ -152,8 +194,8 @@ public class UserController : ControllerBase
 
         return Ok();
     }
-    
-    
+
+
     //-------------------------------------------------------------------
     // Helper functions
     private async Task<bool> _checkCurrentUser(int userId)
@@ -162,12 +204,12 @@ public class UserController : ControllerBase
         return current_user.Data.Id == userId;
     }
 
-    
-    /* TODO 
+
+    /* TODO
     update email
     confirm email
     check user not deleted in login
-    
-    */   
-    
+
+    */
+
 }

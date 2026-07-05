@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using AskFm.BLL.DTO;
 using AskFm.BLL.DTO.UserDTOs;
 using AskFm.DAL.Interfaces;
 using AskFm.DAL.Models;
@@ -36,7 +37,7 @@ public class UserService : IUserService
         AppUserToUpdate.Name =  updatedUser.Name;
         AppUserToUpdate.Bio =  updatedUser.Bio;
         AppUserToUpdate.AvatarPath = updatedUser.AvatarPath;
-        
+
         await _unitOfWork.Users.UpdateAsync(AppUserToUpdate);
         await _unitOfWork.SaveAsync();
         return await ServiceResult<bool>.Success();
@@ -47,7 +48,7 @@ public class UserService : IUserService
         var appUser = await _unitOfWork.Users.GetByIdAsync(userId);
         var res = await CheckNullObjectAsync<bool,ApplicationUser>(appUser);
         if (!res.success) return res;
-        
+
         await _unitOfWork.Users.RemoveAsync(appUser);
         await _unitOfWork.SaveAsync();
         return await ServiceResult<bool>.Success(true);
@@ -55,25 +56,25 @@ public class UserService : IUserService
 
     public async Task<ServiceResult<bool>> FollowUserAsync(int followerId, int targetUserId)
     {
-        
+
         if (followerId == targetUserId)
         {
             return await ServiceResult<bool>.Failure(new List<string> { "Invalid user" });
         }
-        
+
         await using var transaction = await _unitOfWork.BeginTransactionAsync();
         try
         {
             var userFollower = await _unitOfWork.Users.GetByIdAsync(followerId);
             var userFollowerNullRes = await CheckNullObjectAsync<bool,ApplicationUser>(userFollower);
             if (!userFollowerNullRes.success) return userFollowerNullRes;
-            
+
             var targetUser = await _unitOfWork.Users.GetByIdAsync(targetUserId);
             var targetUserNullRes = await CheckNullObjectAsync<bool,ApplicationUser>(targetUser);
             if (!targetUserNullRes.success) return targetUserNullRes;
 
             var followExist = await _unitOfWork.Follows.GetAll()
-                .FirstOrDefaultAsync(f => f.FollowedId == targetUserId 
+                .FirstOrDefaultAsync(f => f.FollowedId == targetUserId
                                      && f.FollowerId == followerId);
 
             if (followExist == null)
@@ -128,11 +129,11 @@ public class UserService : IUserService
             var userFollower = await _unitOfWork.Users.GetByIdAsync(followerId);
             var userFollowerNullRes = await CheckNullObjectAsync<bool,ApplicationUser>(userFollower);
             if (!userFollowerNullRes.success) return userFollowerNullRes;
-            
+
             var targetUser = await _unitOfWork.Users.GetByIdAsync(targetUserId);
             var targetUserNullRes = await CheckNullObjectAsync<bool,ApplicationUser>(targetUser);
             if (!targetUserNullRes.success) return targetUserNullRes;
-        
+
 
             var followExist = await _unitOfWork.Follows.GetAll()
                 .FirstOrDefaultAsync(f => f.FollowedId == targetUserId
@@ -181,7 +182,7 @@ public class UserService : IUserService
             await transaction.RollbackAsync();
             return await ServiceResult<bool>.Failure(new List<string>() { "Invalid update operation" });
         }
-        
+
     }
 
     public async Task<ServiceResult<ReadUserDTO>> GetUserByIdAsync(int userId)
@@ -224,7 +225,7 @@ public class UserService : IUserService
         var appUser = await _unitOfWork.Users.GetByIdAsync(userId);
         var res = await CheckNullObjectAsync<bool, ApplicationUser>(appUser);
         if (!res.success) return res;
-        
+
         var passwordValid = await _userManager.CheckPasswordAsync(appUser, updatePasswordDto.CurrentPassword);
         if (!passwordValid)
         {
@@ -254,7 +255,7 @@ public class UserService : IUserService
         if(!res.success) return res;
 
         //var emailResult = _userManager.GenerateChangeEmailTokenAsync();
-        
+
         //
         throw new NotImplementedException();
 
@@ -264,8 +265,98 @@ public class UserService : IUserService
     {
         throw new NotImplementedException();
     }
-    
-    
+
+    public async Task<ServiceResult<PagedResponseDto<FollowUserDto>>> GetFollowersAsync(int userId, int page, int pageSize)
+    {
+        var targetUser = await _unitOfWork.Users.GetByIdAsync(userId);
+        if (targetUser == null)
+        {
+            return await ServiceResult<PagedResponseDto<FollowUserDto>>.Failure(new List<string> { "User not found" });
+        }
+
+        int skipCount = (page - 1) * pageSize;
+
+        var follows = await _unitOfWork.Follows.GetPagedAsync(
+            skipCount,
+            pageSize + 1,
+            f => f.CreatedAt,
+            false,
+            f => f.FollowedId == userId && !f.IsDeleted && f.IsActive,
+            new[] { "Follower" }
+        );
+
+        bool hasMore = follows.Count > pageSize;
+        var trimmed = follows.Take(pageSize).ToList();
+
+        var items = trimmed.Select(f => new FollowUserDto
+        {
+            Id = f.Follower.Id,
+            Name = f.Follower.Name,
+            Username = f.Follower.UserName,
+            AvatarPath = f.Follower.AvatarPath,
+            Bio = f.Follower.Bio,
+            FollowedSince = f.CreatedAt
+        }).ToList();
+
+        return await ServiceResult<PagedResponseDto<FollowUserDto>>.Success(new PagedResponseDto<FollowUserDto>
+        {
+            Items = items,
+            PageNumber = page,
+            PageSize = pageSize,
+            HasMore = hasMore
+        });
+    }
+
+    public async Task<ServiceResult<PagedResponseDto<FollowUserDto>>> GetFollowingAsync(int userId, int page, int pageSize)
+    {
+        var sourceUser = await _unitOfWork.Users.GetByIdAsync(userId);
+        if (sourceUser == null)
+        {
+            return await ServiceResult<PagedResponseDto<FollowUserDto>>.Failure(new List<string> { "User not found" });
+        }
+
+        int skipCount = (page - 1) * pageSize;
+
+        var follows = await _unitOfWork.Follows.GetPagedAsync(
+            skipCount,
+            pageSize + 1,
+            f => f.CreatedAt,
+            false,
+            f => f.FollowerId == userId && !f.IsDeleted && f.IsActive,
+            new[] { "Followed" }
+        );
+
+        bool hasMore = follows.Count > pageSize;
+        var trimmed = follows.Take(pageSize).ToList();
+
+        var items = trimmed.Select(f => new FollowUserDto
+        {
+            Id = f.Followed.Id,
+            Name = f.Followed.Name,
+            Username = f.Followed.UserName,
+            AvatarPath = f.Followed.AvatarPath,
+            Bio = f.Followed.Bio,
+            FollowedSince = f.CreatedAt
+        }).ToList();
+
+        return await ServiceResult<PagedResponseDto<FollowUserDto>>.Success(new PagedResponseDto<FollowUserDto>
+        {
+            Items = items,
+            PageNumber = page,
+            PageSize = pageSize,
+            HasMore = hasMore
+        });
+    }
+
+    public async Task<ServiceResult<bool>> IsFollowingAsync(int followerId, int targetUserId)
+    {
+        var isFollowing = await _unitOfWork.Follows.GetAll()
+            .AnyAsync(f => f.FollowerId == followerId && f.FollowedId == targetUserId && !f.IsDeleted && f.IsActive);
+
+        return await ServiceResult<bool>.Success(isFollowing);
+    }
+
+
     // Helper check null object
     private async Task<ServiceResult<T>> CheckNullObjectAsync<T,Y>(Y obj, string errorMessage = "Not Found")
     {
@@ -273,7 +364,7 @@ public class UserService : IUserService
         {
             return await ServiceResult<T>.Failure(new List<string>() { errorMessage });
         }
-    
+
         return await ServiceResult<T>.Success();
     }
 }
