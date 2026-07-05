@@ -21,6 +21,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser,IdentityRole<int>,
     public DbSet<CommentLike> CommentLikes { get; set; }
     public DbSet<Notification> Notifications { get; set; }
     public DbSet<SavedThreads> SavedThreads { get; set; }
+    public DbSet<UserBlock> UserBlocks { get; set; }
+    public DbSet<UserMute> UserMutes { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -51,6 +53,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser,IdentityRole<int>,
         modelBuilder.Entity<Comment>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<Notification>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<Thread>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<UserBlock>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<UserMute>().HasQueryFilter(e => !e.IsDeleted);
         
     }
 

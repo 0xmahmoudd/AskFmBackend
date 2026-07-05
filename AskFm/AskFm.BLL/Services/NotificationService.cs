@@ -207,4 +207,17 @@ public class NotificationService : INotificationService
             return await ServiceResult<NotificationDto>.Failure(new List<string> { ex.Message });
         }
     }
+
+    public async Task<ServiceResult<int>> GetUnreadCount(int userId)
+    {
+        try
+        {
+            var count = await _unitOfWork.Notifications.CountAsync(n => n.UserId == userId && !n.IsRead);
+            return await ServiceResult<int>.Success(count);
+        }
+        catch (Exception ex)
+        {
+            return await ServiceResult<int>.Failure(new List<string> { ex.Message });
+        }
+    }
 }

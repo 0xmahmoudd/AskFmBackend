@@ -23,6 +23,11 @@ public class ApplicationUser : IdentityUser<int>, ITrackable
     public virtual ICollection<CommentLike>? CommentLikes { get; set; }
     public virtual ICollection<Notification>? Notifications { get; set; }
     public virtual ICollection<SavedThreads>? SavedThreads { get; set; }
+    
+    public virtual ICollection<UserBlock>? BlockedUsers { get; set; }
+    public virtual ICollection<UserBlock>? BlockedByUsers { get; set; }
+    public virtual ICollection<UserMute>? MutedUsers { get; set; }
+    public virtual ICollection<UserMute>? MutedByUsers { get; set; }
 
     public bool IsDeleted { get; set; }
     public DateTime DeletedAt { get; set; }

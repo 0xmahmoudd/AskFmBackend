@@ -14,6 +14,8 @@ public interface IUnitOfWork : IDisposable
     IRepository<CommentLike>  CommentLikes { get; }
     IRepository<Follow>  Follows { get; }
     IRepository<Notification>  Notifications { get; }
+    IRepository<UserBlock> UserBlocks { get; }
+    IRepository<UserMute> UserMutes { get; }
     
     int Save();
     Task<int> SaveAsync();

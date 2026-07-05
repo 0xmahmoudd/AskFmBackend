@@ -18,6 +18,8 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<CommentLike> _commentLikes;
     private IRepository<Follow> _follows;
     private IRepository<Notification> _notifications;
+    private IRepository<UserBlock> _userBlocks;
+    private IRepository<UserMute> _userMutes;
 
 
     
@@ -117,6 +119,30 @@ public class UnitOfWork : IUnitOfWork
                 _notifications = new Repository<Notification>(_context);
             }
             return _notifications;
+        }
+    }
+
+    public IRepository<UserBlock> UserBlocks
+    {
+        get
+        {
+            if (_userBlocks == null)
+            {
+                _userBlocks = new Repository<UserBlock>(_context);
+            }
+            return _userBlocks;
+        }
+    }
+
+    public IRepository<UserMute> UserMutes
+    {
+        get
+        {
+            if (_userMutes == null)
+            {
+                _userMutes = new Repository<UserMute>(_context);
+            }
+            return _userMutes;
         }
     }
 

@@ -62,6 +62,7 @@ public class Program
         builder.Services.AddScoped<ICommentLikeService, CommentLikeService>();
         builder.Services.AddScoped<ICommentService, CommentService>();
         builder.Services.AddScoped<IEmailSender,EmailSender>();
+        builder.Services.AddScoped<IUserModerationService, UserModerationService>();
         builder.Services.AddControllers();
 
         // Configure Swagger with JWT Authentication

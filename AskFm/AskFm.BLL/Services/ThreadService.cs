@@ -56,6 +56,18 @@ public class ThreadService : IThreadService
                     new List<string>() { "User can not ask him self" });
             }
 
+            // Check if there is a block in either direction
+            var block = await _unitOfWork.UserBlocks.FindAsync(
+                b => (b.BlockerId == askerId && b.BlockedId == askedId) || 
+                     (b.BlockerId == askedId && b.BlockedId == askerId)
+            );
+
+            if (block != null)
+            {
+                await transaction.RollbackAsync();
+                return await ServiceResult<ThreadResponseDto>.Failure(
+                    new List<string>() { "You cannot ask this user questions" });
+            }
 
             // check if the QuestionContent is empty or not
             if (string.IsNullOrEmpty(createThreadDto.QuestionContent))
