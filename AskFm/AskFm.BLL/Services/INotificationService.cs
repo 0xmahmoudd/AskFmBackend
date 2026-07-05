@@ -10,4 +10,5 @@ public interface INotificationService
     Task<ServiceResult<string>> MarkNotificationAsRead(int notificationId, int userId);
     Task<ServiceResult<string>> MarkAllNotificationsAsRead(int userId);
     Task<ServiceResult<NotificationDto>> CreateNotification(int userId, NotificationStatus type, int resourceId, string message);
+    Task<ServiceResult<int>> GetUnreadCount(int userId);
 }
