@@ -379,6 +379,51 @@ public class UserService : IUserService
         return await ServiceResult<bool>.Success(isFollowing);
     }
 
+    public async Task<ServiceResult<PagedResponseDto<UserSearchResultDto>>> SearchUsersAsync(string query, int page, int pageSize)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return await ServiceResult<PagedResponseDto<UserSearchResultDto>>.Success(new PagedResponseDto<UserSearchResultDto>
+            {
+                Items = new List<UserSearchResultDto>(),
+                PageNumber = page,
+                PageSize = pageSize,
+                HasMore = false
+            });
+        }
+
+        var normalizedQuery = query.Trim().ToLower();
+        int skipCount = (page - 1) * pageSize;
+
+        var users = _unitOfWork.Users.GetAll()
+            .Where(u => u.UserName.ToLower().Contains(normalizedQuery) || u.Name.ToLower().Contains(normalizedQuery))
+            .OrderBy(u => u.UserName)
+            .Skip(skipCount)
+            .Take(pageSize + 1);
+
+        var list = await users.ToListAsync();
+        bool hasMore = list.Count > pageSize;
+        var trimmed = list.Take(pageSize).ToList();
+
+        var items = trimmed.Select(u => new UserSearchResultDto
+        {
+            Id = u.Id,
+            Name = u.Name,
+            Username = u.UserName,
+            AvatarPath = u.AvatarPath,
+            Bio = u.Bio,
+            FollowersCount = u.FollowersCount
+        }).ToList();
+
+        return await ServiceResult<PagedResponseDto<UserSearchResultDto>>.Success(new PagedResponseDto<UserSearchResultDto>
+        {
+            Items = items,
+            PageNumber = page,
+            PageSize = pageSize,
+            HasMore = hasMore
+        });
+    }
+
 
     // Helper check null object
     private async Task<ServiceResult<T>> CheckNullObjectAsync<T,Y>(Y obj, string errorMessage = "Not Found")

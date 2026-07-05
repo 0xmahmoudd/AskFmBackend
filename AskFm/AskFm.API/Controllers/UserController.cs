@@ -135,6 +135,18 @@ public class UserController : ControllerBase
     }
 
     [HttpGet]
+    [Route("search")]
+    public async Task<IActionResult> SearchUsersAsync([FromQuery] string q, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        var result = await _userService.SearchUsersAsync(q, page, pageSize);
+        if (!result.success)
+        {
+            return BadRequest(result.Errors);
+        }
+        return Ok(result.Data);
+    }
+
+    [HttpGet]
     [Route("profile/{userId}/followers")]
     public async Task<IActionResult> GetFollowersAsync(int userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
