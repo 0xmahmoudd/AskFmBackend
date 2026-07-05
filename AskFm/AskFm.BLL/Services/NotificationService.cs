@@ -129,6 +129,9 @@ public class NotificationService : INotificationService
             _unitOfWork.Notifications.Update(notification);
             await _unitOfWork.SaveAsync();
 
+            var count = await _unitOfWork.Notifications.CountAsync(n => n.UserId == userId && !n.IsRead);
+            await _hubContext.Clients.Group($"user_{userId}").SendAsync("UnreadCountUpdated", count);
+
             return await ServiceResult<string>.Success("notification has been read");
         }
         catch (Exception ex)
@@ -150,6 +153,10 @@ public class NotificationService : INotificationService
             }
 
             await _unitOfWork.SaveAsync();
+            
+            var count = await _unitOfWork.Notifications.CountAsync(n => n.UserId == userId && !n.IsRead);
+            await _hubContext.Clients.Group($"user_{userId}").SendAsync("UnreadCountUpdated", count);
+
             return await ServiceResult<string>.Success("All notifications marked as read");
         }
         catch (Exception ex)
@@ -199,6 +206,9 @@ public class NotificationService : INotificationService
             // Send real-time notification to the specific user
             await _hubContext.Clients.Group($"user_{userId}")
                 .SendAsync("ReceiveNotification", notificationDto);
+
+            var count = await _unitOfWork.Notifications.CountAsync(n => n.UserId == userId && !n.IsRead);
+            await _hubContext.Clients.Group($"user_{userId}").SendAsync("UnreadCountUpdated", count);
 
             return await ServiceResult<NotificationDto>.Success(notificationDto);
         }

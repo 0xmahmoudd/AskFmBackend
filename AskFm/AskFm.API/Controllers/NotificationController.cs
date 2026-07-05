@@ -91,6 +91,15 @@ namespace AskFm.API.Controllers
             }
         }
 
+        [HttpGet("unread-count")]
+        public async Task<IActionResult> GetUnreadCount()
+        {
+            var userId = GetCurrentUserId();
+            var result = await _notificationService.GetUnreadCount(userId);
+            if (!result.success) return BadRequest(result.Errors);
+            return Ok(new { unreadCount = result.Data });
+        }
+
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateNotification([FromBody] CreateNotificationRequest request)
