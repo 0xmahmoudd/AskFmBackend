@@ -4,7 +4,7 @@ This document visualizes the available endpoints for the AskFm Backend API. All 
 
 ---
 
-## 🔐 Auth (`/api/Auth`)
+##  Auth (`/api/Auth`)
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
@@ -19,7 +19,7 @@ This document visualizes the available endpoints for the AskFm Backend API. All 
 
 ---
 
-## 👤 User Profiles (`/api/User`)
+##  User Profiles (`/api/User`)
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
@@ -34,7 +34,7 @@ This document visualizes the available endpoints for the AskFm Backend API. All 
 
 ---
 
-## 🤝 Social & Following (`/api/User`)
+##  Social & Following (`/api/User`)
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
@@ -46,7 +46,7 @@ This document visualizes the available endpoints for the AskFm Backend API. All 
 
 ---
 
-## 💬 Threads & Q&A (`/api/Thread`)
+## Threads & Q&A (`/api/Thread`)
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
@@ -64,7 +64,7 @@ This document visualizes the available endpoints for the AskFm Backend API. All 
 
 ---
 
-## ❤️ Likes (`/api/ThreadLike`, `/api/Comment`)
+##  Likes (`/api/ThreadLike`, `/api/Comment`)
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
@@ -77,7 +77,7 @@ This document visualizes the available endpoints for the AskFm Backend API. All 
 
 ---
 
-## 📝 Comments (`/api/Comment`)
+##  Comments (`/api/Comment`)
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
@@ -87,7 +87,7 @@ This document visualizes the available endpoints for the AskFm Backend API. All 
 
 ---
 
-## 🛡️ Moderation (`/api/Moderation`)
+##  Moderation (`/api/Moderation`)
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
@@ -99,7 +99,7 @@ This document visualizes the available endpoints for the AskFm Backend API. All 
 
 ---
 
-## 🔔 Notifications (`/api/Notification`)
+##  Notifications (`/api/Notification`)
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|

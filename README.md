@@ -20,7 +20,7 @@ The solution follows a classic 3-Tier architecture to enforce separation of conc
 - **`AskFm.DAL`**: The Data Access Layer containing EF Core DbContext, Models, Entity Configurations, and the Unit of Work / Repository pattern implementations.
 - **`Shared`**: Common constants and utilities shared across layers.
 
-## 🛠️ Technology Stack
+##  Technology Stack
 
 - **Framework**: .NET 9.0 (ASP.NET Core Web API)
 - **Database**: SQL Server & Entity Framework Core
