@@ -54,9 +54,9 @@ public class ThreadController : ControllerBase
     // get all threads for user by user id
     [HttpGet]
     [Route("thread/{id}")]
-    public async Task<IActionResult> GetAllThreads([FromRoute] int id)
+    public async Task<IActionResult> GetAllThreads([FromRoute] int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var threads = await _threadService.GetAllThreads(id);
+        var threads = await _threadService.GetAllThreads(id, page, pageSize);
         if (!threads.success)
         {
             return BadRequest(threads.Errors);

@@ -38,7 +38,7 @@ public class ThreadService : IThreadService
                     new List<string>() { "Could not find asked user" });
             }
 
-            // getting the Asker user object 
+            // getting the Asker user object
             var askerUser = await _unitOfWork.Users.GetByIdAsync(askerId);
             if (askerUser == null)
             {
@@ -150,22 +150,26 @@ public class ThreadService : IThreadService
         }
     }
 
-    public async Task<ServiceResult<List<ThreadResponseDto>>> GetAllThreads(int askedId)
+    public async Task<ServiceResult<PagedResponseDto<ThreadResponseDto>>> GetAllThreads(int askedId, int page, int pageSize)
     {
         try
         {
-            // Get all threads for user
-            var threads = await _unitOfWork.Threads.FindAllAsync(
-                predicate: t => t.AskedId == askedId,
-                includes: new[] { "Asker", "Asked", "Comments", "ThreadLikes" }
+            int skipCount = (page - 1) * pageSize;
+
+            // Get all threads for user, paginated
+            var threads = await _unitOfWork.Threads.GetPagedAsync(
+                skipCount,
+                pageSize + 1,
+                t => t.CreatedAt,
+                false,
+                t => t.AskedId == askedId,
+                new[] { "Asker", "Asked", "Comments", "ThreadLikes" }
             );
 
-            if (threads == null || !threads.Any())
-            {
-                return await ServiceResult<List<ThreadResponseDto>>.Success(new List<ThreadResponseDto>());
-            }
+            bool hasMore = threads.Count > pageSize;
+            var trimmed = threads.Take(pageSize).ToList();
 
-            var threadDtos = threads.Select(thread => new ThreadResponseDto
+            var threadDtos = trimmed.Select(thread => new ThreadResponseDto
             {
                 Id = thread.Id,
                 QuestionContent = thread.QuestionContent,
@@ -181,12 +185,20 @@ public class ThreadService : IThreadService
                 CommentsCount = thread.Comments?.Count ?? 0
             }).ToList();
 
-            return await ServiceResult<List<ThreadResponseDto>>.Success(threadDtos);
+            var response = new PagedResponseDto<ThreadResponseDto>
+            {
+                Items = threadDtos,
+                PageNumber = page,
+                PageSize = pageSize,
+                HasMore = hasMore
+            };
+
+            return await ServiceResult<PagedResponseDto<ThreadResponseDto>>.Success(response);
         }
         catch (Exception e)
         {
             _logger.LogError(e, "Error retrieving threads");
-            return await ServiceResult<List<ThreadResponseDto>>.Failure(new List<string>() { e.Message });
+            return await ServiceResult<PagedResponseDto<ThreadResponseDto>>.Failure(new List<string>() { e.Message });
         }
     }
 
@@ -211,7 +223,7 @@ public class ThreadService : IThreadService
                 return await ServiceResult<ThreadResponseDto>.Failure(
                     new List<string> { "Answer cannot exceed 5000 characters" });
             }
-            
+
             var thread = await _unitOfWork.Threads.FindAsync(
                 predicate: t => t.Id == threadId,
                 includes: new[] { "Asker", "Asked" }
@@ -280,11 +292,11 @@ public class ThreadService : IThreadService
                 t => true,
                 new[] { "Asker", "Asked", "Comments", "ThreadLikes" }
             );
-            
+
             bool hasMore = threads.Count > pageSize;
 
             var trimmed = threads.Take(pageSize).ToList();
-            
+
             var threadDtos = trimmed.Select(thread => new ThreadResponseDto
             {
                 Id = thread.Id,
@@ -380,17 +392,17 @@ public class ThreadService : IThreadService
                 t => followedUserIds.Contains(t.AskedId) && t.Status == ThreadStatus.Answered,
                 new[] { "Asker", "Asked", "Comments", "ThreadLikes" }
             );
-            
-            // asking if still  there is some remaining pages withou using COUNT() 
+
+            // asking if still  there is some remaining pages withou using COUNT()
             bool hasMore = threads.Count > pageSize;
 
             /* after getting the threads with size of pageSize + 1
              to find if there are remaining threads (nextPage) without usint TotalCound and totalPages
              now we need to return back only the PageSize of threads
-             that what i'm doing here in the trimmed list, 
+             that what i'm doing here in the trimmed list,
              */
             var trimmed = threads.Take(pageSize).ToList();
-            
+
             var threadDtos = trimmed.Select(thread => new ThreadResponseDto
             {
                 Id = thread.Id,
@@ -524,16 +536,16 @@ public class ThreadService : IThreadService
                 new[] { "Thread", "Thread.Asker", "Thread.Asked", "Thread.Comments", "Thread.ThreadLikes" }
             );
 
-            
+
             bool hasMore = savedThreads.Count > pageSize;
-            
+
             /* after getting the threads with size of pageSize + 1
              to find if there are remaining threads (nextPage) without usint TotalCound and totalPages
              now we need to return back only the PageSize of threads
              that what i'm doing here in the trimmed list,
             */
             var trimmed = savedThreads.Take(pageSize).ToList();
-            
+
             var threadDtos = trimmed.Select(st => new ThreadResponseDto
             {
                 Id = st.Thread.Id,
