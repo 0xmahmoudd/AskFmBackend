@@ -14,4 +14,5 @@ public interface IThreadService
     public Task<ServiceResult<bool>> SaveThread(int threadId, int userId);
     public Task<ServiceResult<bool>> UnsaveThread(int threadId, int userId);
     public Task<ServiceResult<PagedResponseDto<ThreadResponseDto>>> GetSavedThreads(int userId, int page, int pageSize);
+    public Task<ServiceResult<ThreadResponseDto>> ToggleThreadVisibilityAsync(int threadId, int userId);
 }

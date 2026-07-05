@@ -6,5 +6,6 @@ public enum ThreadStatus
     Closed,
     PRIVATEQUESTION,
     Answered,
-    Pending
+    Pending,
+    Hidden
 }

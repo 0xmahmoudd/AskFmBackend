@@ -210,4 +210,23 @@ public class ThreadController : ControllerBase
 
         return Ok(threads.Data);
     }
+
+    [HttpPut]
+    [Route("threads/{id}/visibility")]
+    public async Task<IActionResult> ToggleVisibility([FromRoute] int id)
+    {
+        var user = await _userService.GetCurrentUserAsync();
+        if (!user.success)
+        {
+            return BadRequest(user.Errors);
+        }
+
+        var result = await _threadService.ToggleThreadVisibilityAsync(id, user.Data.Id);
+        if (!result.success)
+        {
+            return BadRequest(result.Errors);
+        }
+
+        return Ok(result.Data);
+    }
 }

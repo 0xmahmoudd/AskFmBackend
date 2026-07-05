@@ -174,7 +174,7 @@ public class ThreadService : IThreadService
                 pageSize + 1,
                 t => t.CreatedAt,
                 false,
-                t => t.AskedId == askedId,
+                t => t.AskedId == askedId && t.Status != ThreadStatus.Hidden,
                 new[] { "Asker", "Asked", "Comments", "ThreadLikes" }
             );
 
@@ -589,6 +589,59 @@ public class ThreadService : IThreadService
         {
             _logger.LogError(e, "Error retrieving saved threads");
             return await ServiceResult<PagedResponseDto<ThreadResponseDto>>.Failure(new List<string>() { e.Message });
+        }
+    }
+
+    public async Task<ServiceResult<ThreadResponseDto>> ToggleThreadVisibilityAsync(int threadId, int userId)
+    {
+        try
+        {
+            var thread = await _unitOfWork.Threads.GetByIdAsync(threadId);
+
+            if (thread == null)
+                return await ServiceResult<ThreadResponseDto>.Failure(new List<string> { "Thread not found" });
+
+            if (thread.AskedId != userId)
+                return await ServiceResult<ThreadResponseDto>.Failure(new List<string> { "Only the profile owner can toggle thread visibility" });
+
+            if (thread.Status == ThreadStatus.Answered)
+            {
+                thread.Status = ThreadStatus.Hidden;
+            }
+            else if (thread.Status == ThreadStatus.Hidden)
+            {
+                thread.Status = ThreadStatus.Answered;
+            }
+            else
+            {
+                return await ServiceResult<ThreadResponseDto>.Failure(new List<string> { "Thread cannot be hidden in its current state" });
+            }
+
+            _unitOfWork.Threads.Update(thread);
+            await _unitOfWork.SaveAsync();
+
+            var responseDto = new ThreadResponseDto
+            {
+                Id = thread.Id,
+                QuestionContent = thread.QuestionContent,
+                AnswerContent = thread.AnswerContent,
+                Status = thread.Status,
+                IsAnonymous = thread.isAnonymous,
+                CreatedAt = thread.CreatedAt,
+                AskerId = thread.AskerId ?? 0,
+                AskerName = thread.isAnonymous ? "Anonymous" : thread.Asker?.Name,
+                AskedId = thread.AskedId,
+                AskedName = thread.Asked?.Name,
+                LikesCount = thread.ThreadLikes?.Count ?? 0,
+                CommentsCount = thread.Comments?.Count ?? 0
+            };
+
+            return await ServiceResult<ThreadResponseDto>.Success(responseDto);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error toggling thread visibility");
+            return await ServiceResult<ThreadResponseDto>.Failure(new List<string> { e.Message });
         }
     }
 }
