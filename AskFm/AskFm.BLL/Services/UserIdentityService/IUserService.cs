@@ -14,7 +14,8 @@ public interface IUserService
     Task<ServiceResult<ReadUserDTO>> GetUserByIdAsync(int userId);
     Task<ServiceResult<ApplicationUser>> GetCurrentUserAsync();
     Task<ServiceResult<bool>> UpdatePassword(int userId, UpdatePasswordDTO updatePasswordDto);
-    Task<ServiceResult<ReadUserDTO>> ResetEmail(int userId, string updatedEmail);
+    Task<ServiceResult<bool>> ResetEmail(int userId, string updatedEmail);
+    Task<ServiceResult<bool>> ConfirmEmailChangeAsync(int userId, string updatedEmail, string token);
 
     Task<ServiceResult<PagedResponseDto<FollowUserDto>>> GetFollowersAsync(int userId, int page, int pageSize);
     Task<ServiceResult<PagedResponseDto<FollowUserDto>>> GetFollowingAsync(int userId, int page, int pageSize);

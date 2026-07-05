@@ -21,7 +21,7 @@ public class AuthController : ControllerBase
         _authService = authService;
         _userService = userService;
     }
-    
+
     [HttpPost]
     [Route("register")]
     public async Task<IActionResult> RegisterUser(RegisterUserDTO registerUser)
@@ -78,7 +78,7 @@ public class AuthController : ControllerBase
         setRefreshToken(result.Data.RefreshToken.Token,result.Data.RefreshToken.ExpireOn);
         return Ok(result);
     }
-    
+
     [HttpPost("logout/{id}")]
     [Authorize(AuthenticationSchemes = "Bearer")]
     public async Task<IActionResult> Logout(int id)
@@ -93,14 +93,14 @@ public class AuthController : ControllerBase
         {
             return BadRequest("token Is required");
         }
-        
+
         var result = await _authService.Logout(currentUser.Data.Id,refreshToken);
-        
+
         if (!result.success)
         {
             return BadRequest(result.Errors);
         }
-        
+
         return Ok(result);
     }
 
@@ -118,7 +118,7 @@ public class AuthController : ControllerBase
 
         return Ok("Check Your Email");
     }
-    
+
     [HttpPost]
     [AllowAnonymous]
     [Route("reset-password")]
@@ -134,9 +134,42 @@ public class AuthController : ControllerBase
         {
             return BadRequest(result.Errors);
         }
-        
+
         return Ok("Password Reset Success");
     }
+    [HttpPost]
+    [AllowAnonymous]
+    [Route("send-email-confirmation")]
+    public async Task<IActionResult> SendEmailConfirmation(ForgotPasswordDto request)
+    {
+        var result = await _authService.SendEmailConfirmationAsync(request.Email);
+        if (!result.success)
+        {
+            return BadRequest(result.Errors);
+        }
+
+        return Ok("Check Your Email");
+    }
+
+    [HttpPost]
+    [AllowAnonymous]
+    [Route("confirm-email")]
+    public async Task<IActionResult> ConfirmEmail(ConfirmEmailDto confirmEmailDto)
+    {
+        if (confirmEmailDto == null)
+        {
+            return BadRequest("Invalid Data");
+        }
+
+        var result = await _authService.ConfirmEmailAsync(confirmEmailDto);
+        if (!result.success)
+        {
+            return BadRequest(result.Errors);
+        }
+
+        return Ok("Email Confirmed Successfully");
+    }
+
     private void setRefreshToken(string refreshToken,DateTime expires)
     {
         var cookieOption = new CookieOptions()
@@ -146,5 +179,5 @@ public class AuthController : ControllerBase
         };
        Response.Cookies.Append("refreshToken", refreshToken, cookieOption);
     }
-    
+
 }

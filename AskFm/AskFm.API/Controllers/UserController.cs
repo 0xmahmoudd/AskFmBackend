@@ -196,6 +196,42 @@ public class UserController : ControllerBase
     }
 
 
+    [HttpPost]
+    [Route("profile/update/email/{userId}")]
+    public async Task<IActionResult> RequestEmailChangeAsync(int userId, UpdateEmailDto updateEmailDto)
+    {
+        if (!await _checkCurrentUser(userId))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, "Cannot Update this user");
+        }
+
+        var result = await _userService.ResetEmail(userId, updateEmailDto.NewEmail);
+        if (!result.success)
+        {
+            return BadRequest(result.Errors);
+        }
+
+        return Ok("Check Your New Email To Confirm The Change");
+    }
+
+    [HttpPost]
+    [Route("profile/update/email/{userId}/confirm")]
+    public async Task<IActionResult> ConfirmEmailChangeAsync(int userId, ConfirmEmailChangeDto confirmEmailChangeDto)
+    {
+        if (!await _checkCurrentUser(userId))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, "Cannot Update this user");
+        }
+
+        var result = await _userService.ConfirmEmailChangeAsync(userId, confirmEmailChangeDto.NewEmail, confirmEmailChangeDto.Token);
+        if (!result.success)
+        {
+            return BadRequest(result.Errors);
+        }
+
+        return Ok("Email Updated Successfully");
+    }
+
     //-------------------------------------------------------------------
     // Helper functions
     private async Task<bool> _checkCurrentUser(int userId)
@@ -206,10 +242,7 @@ public class UserController : ControllerBase
 
 
     /* TODO
-    update email
-    confirm email
     check user not deleted in login
-
     */
 
 }

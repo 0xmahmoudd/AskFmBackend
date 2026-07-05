@@ -1,4 +1,5 @@
 using AskFm.BLL.DTO.UserDTOs;
+using AskFm.BLL.Services;
 using AskFm.BLL.Services.UserIdentityService;
 using AskFm.DAL;
 using AskFm.DAL.Interfaces;
@@ -18,6 +19,8 @@ public class UserTests
     private Mock<IHttpContextAccessor> _mockHttpContextAccessor;
     private Mock<UserManager<ApplicationUser>> _mockUserManager;
     private Mock<IApplicationUserRepository> _mockApplicationUserRepository;
+    private Mock<IEmailSender> _mockEmailSender;
+    private Mock<Microsoft.Extensions.Configuration.IConfiguration> _mockConfiguration;
 
     public UserTests()
     {
@@ -26,23 +29,25 @@ public class UserTests
         _mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
         _mockUnitOfWork = new Mock<IUnitOfWork>();
         _mockApplicationUserRepository = new Mock<IApplicationUserRepository>();
+        _mockEmailSender = new Mock<IEmailSender>();
+        _mockConfiguration = new Mock<Microsoft.Extensions.Configuration.IConfiguration>();
         // uesr repo setup
         _mockUnitOfWork.Setup(u => u.Users).Returns(_mockApplicationUserRepository.Object);
-        
+
         // service creation
-        _userService = new UserService(_mockUnitOfWork.Object, _mockUserManager.Object, _mockHttpContextAccessor.Object);
-        
+        _userService = new UserService(_mockUnitOfWork.Object, _mockUserManager.Object, _mockHttpContextAccessor.Object, _mockEmailSender.Object, _mockConfiguration.Object);
+
         // user manager save
         _mockUserManager.Setup(um => um.UpdateAsync(It.IsAny<ApplicationUser>()))
             .ReturnsAsync(IdentityResult.Success);
 
     }
-    
-    
-    
-    /// 
+
+
+
+    ///
     /// Test updateUserAsync Service with 3 conditions
-    /// 
+    ///
     [Fact]
     public async Task UpdatedUser_UpdatedWithCorrectUserAndCorrectData_SuccessWithUserData()
     {
@@ -84,15 +89,15 @@ public class UserTests
     {
         // Act
         var result = await _userService.UpdateUserAsync(1, null);
-        
-        // Assert 
+
+        // Assert
         Assert.False(result.success);
         _mockUnitOfWork.Verify((u=>u.Users.GetByIdAsync(It.IsAny<int>())),Times.Never);
         _mockUnitOfWork.Verify(u => u.Users.UpdateAsync(It.IsAny<ApplicationUser>()), Times.Never);
         _mockUnitOfWork.Verify(u => u.SaveAsync(), Times.Never);
 
     }
-    
+
     [Fact]
     public async Task UpdatedUser_ThePassedUserIsNotFound_UpdateFaild()
     {
@@ -106,28 +111,28 @@ public class UserTests
         };
 
         _mockUnitOfWork.Setup(u => u.Users.GetByIdAsync(userId)).ReturnsAsync((ApplicationUser?)null);
-        
+
         // act
         var result = await _userService.UpdateUserAsync(userId, updatedUser);
-        
+
         // Assert
         Assert.False(result.success);
         _mockUnitOfWork.Verify((u=>u.Users.GetByIdAsync(It.IsAny<int>())),Times.Once);
         _mockUnitOfWork.Verify(u => u.Users.UpdateAsync(It.IsAny<ApplicationUser>()), Times.Never);
         _mockUnitOfWork.Verify(u => u.SaveAsync(), Times.Never);
-        
+
     }
 
-    /// 
+    ///
     /// Update DeleteUserAsync with 2 conditions
-    /// 
+    ///
     [Fact]
     public async Task DeleteUserAsync_ThePassedUserNotFound_DeleteFaild()
     {
-        // Arrange 
+        // Arrange
         int userId = 1;
         _mockUnitOfWork.Setup(u=>u.Users.GetByIdAsync(userId)).ReturnsAsync((ApplicationUser?)null);
-        
+
         // Act
         var result = await _userService.DeleteUserAsync(userId);
         // Assert
@@ -135,7 +140,7 @@ public class UserTests
         _mockUnitOfWork.Verify((u=>u.Users.GetByIdAsync(userId)), Times.Once);
         _mockUnitOfWork.Verify(u => u.Users.RemoveAsync(It.IsAny<ApplicationUser>()), Times.Never);
         _mockUnitOfWork.Verify(u => u.SaveAsync(), Times.Never);
-    }   
+    }
     [Fact]
     public async Task DeleteUserAsync_FoundedUser_DeleteSuccess()
     {
@@ -148,15 +153,15 @@ public class UserTests
             Bio = "Bio",
             AvatarPath = "/image.jpg"
         };
-        
+
         _mockUnitOfWork.Setup(u => u.Users.GetByIdAsync(userId)).ReturnsAsync(appUser);
         _mockUnitOfWork.Setup(u=>u.Users.RemoveAsync(appUser)).Returns(Task.CompletedTask);
         _mockUnitOfWork.Setup(u => u.SaveAsync()).ReturnsAsync(1);
-        
-        
+
+
         // Act
         var result = await _userService.DeleteUserAsync(userId);
-        
+
         //
         Assert.True(result.success);
         _mockUnitOfWork.Verify(u => u.Users.GetByIdAsync(userId), Times.Once);
@@ -165,13 +170,13 @@ public class UserTests
 
 
     }
-    
+
 
     /// <summary>
     ///  Follow 6, search how to test transactions
     /// </summary>
     /// <returns></returns>
-    /// 
+    ///
 
     // helper functions
     private Mock<UserManager<ApplicationUser>> GetMockUserManager()

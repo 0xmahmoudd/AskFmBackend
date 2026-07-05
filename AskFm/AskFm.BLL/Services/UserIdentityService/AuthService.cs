@@ -116,8 +116,57 @@ public class AuthService : IAuthService
 
         }
 
+        await SendEmailConfirmationAsync(newUser.Email);
+
         var response = await GetAuthToken(newUser);
         return response;
+    }
+
+    public async Task<ServiceResult<bool>> SendEmailConfirmationAsync(string email)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null)
+        {
+            var error = new List<string> { "Invalid Email." };
+            return await ServiceResult<bool>.Failure(error);
+        }
+
+        if (user.EmailConfirmed)
+        {
+            var error = new List<string> { "Email already confirmed." };
+            return await ServiceResult<bool>.Failure(error);
+        }
+
+        var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        var confirmationUrl =
+            $"{_configuration.GetValue<string>("ClientUrl")}/app/Auth/confirm-email?email={email}&token={Uri.EscapeDataString(token)}";
+
+        await _emailSender.SendConfirmationLinkAsync(email, confirmationUrl);
+
+        return await ServiceResult<bool>.Success(true);
+    }
+
+    public async Task<ServiceResult<bool>> ConfirmEmailAsync(ConfirmEmailDto confirmEmailDto)
+    {
+        var user = await _userManager.FindByEmailAsync(confirmEmailDto.Email);
+        if (user == null)
+        {
+            var error = new List<string> { "Invalid Data" };
+            return await ServiceResult<bool>.Failure(error);
+        }
+
+        if (user.EmailConfirmed)
+        {
+            return await ServiceResult<bool>.Success(true);
+        }
+
+        var result = await _userManager.ConfirmEmailAsync(user, confirmEmailDto.Token);
+        if (result.Succeeded)
+        {
+            return await ServiceResult<bool>.Success(true);
+        }
+
+        return await ServiceResult<bool>.Failure(result.Errors.Select(e => e.Description).ToList());
     }
 
     public async Task<ServiceResult<AuthResponseDTO>> RefreshTokenAsync(int id, string refreshToken)
@@ -197,9 +246,9 @@ public class AuthService : IAuthService
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
         var resetUrl =
             $"{_configuration.GetValue<string>("ClientUrl")}/app/Auth/reset-password?email={email}&token={token}";
-        
+
         _emailSender.SendEmailAsync(email, "AskFm: Reset Password", resetUrl);
-        
+
         return await ServiceResult<bool>.Success(true);
     }
 
@@ -313,6 +362,5 @@ public class AuthService : IAuthService
         await _redisCacheService.RemoveCacheAsync(AppConstants.UserJwtCacheKey(userId));
 
     }
-    
-}
 
+}

@@ -6,6 +6,7 @@ using AskFm.DAL.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace AskFm.BLL.Services.UserIdentityService;
 
@@ -14,13 +15,17 @@ public class UserService : IUserService
     private IUnitOfWork _unitOfWork;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IEmailSender _emailSender;
+    private readonly IConfiguration _configuration;
 
 
-    public UserService(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager,  IHttpContextAccessor httpContextAccessor)
+    public UserService(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager,  IHttpContextAccessor httpContextAccessor, IEmailSender emailSender, IConfiguration configuration)
     {
         _unitOfWork = unitOfWork;
         _userManager = userManager;
         _httpContextAccessor = httpContextAccessor;
+        _emailSender = emailSender;
+        _configuration = configuration;
     }
 
 
@@ -248,22 +253,40 @@ public class UserService : IUserService
         return await ServiceResult<bool>.Success(true);
     }
 
-    public async Task<ServiceResult<ReadUserDTO>> ResetEmail(int userId, string updatedEmail)
+    public async Task<ServiceResult<bool>> ResetEmail(int userId, string updatedEmail)
     {
-        var userApp =await _unitOfWork.Users.GetByIdAsync(userId);
-        var res = await CheckNullObjectAsync<ReadUserDTO, ApplicationUser>(userApp);
+        var userApp = await _unitOfWork.Users.GetByIdAsync(userId);
+        var res = await CheckNullObjectAsync<bool, ApplicationUser>(userApp);
         if(!res.success) return res;
 
-        //var emailResult = _userManager.GenerateChangeEmailTokenAsync();
+        var existingUser = await _userManager.FindByEmailAsync(updatedEmail);
+        if (existingUser != null)
+        {
+            return await ServiceResult<bool>.Failure(new List<string> { "Email already in use." });
+        }
 
-        //
-        throw new NotImplementedException();
+        var token = await _userManager.GenerateChangeEmailTokenAsync(userApp, updatedEmail);
+        var confirmationUrl =
+            $"{_configuration.GetValue<string>("ClientUrl")}/app/User/confirm-email-change?userId={userId}&newEmail={Uri.EscapeDataString(updatedEmail)}&token={Uri.EscapeDataString(token)}";
 
+        await _emailSender.SendConfirmationLinkAsync(updatedEmail, confirmationUrl);
+
+        return await ServiceResult<bool>.Success(true);
     }
 
-    public Task<ServiceResult<ReadUserDTO>> ConfirmEmail()
+    public async Task<ServiceResult<bool>> ConfirmEmailChangeAsync(int userId, string updatedEmail, string token)
     {
-        throw new NotImplementedException();
+        var userApp = await _unitOfWork.Users.GetByIdAsync(userId);
+        var res = await CheckNullObjectAsync<bool, ApplicationUser>(userApp);
+        if (!res.success) return res;
+
+        var result = await _userManager.ChangeEmailAsync(userApp, updatedEmail, token);
+        if (!result.Succeeded)
+        {
+            return await ServiceResult<bool>.Failure(result.Errors.Select(e => e.Description).ToList());
+        }
+
+        return await ServiceResult<bool>.Success(true);
     }
 
     public async Task<ServiceResult<PagedResponseDto<FollowUserDto>>> GetFollowersAsync(int userId, int page, int pageSize)

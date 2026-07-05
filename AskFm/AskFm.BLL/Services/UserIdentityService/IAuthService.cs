@@ -12,4 +12,6 @@ public interface IAuthService
     public Task<ServiceResult<bool>> Logout(int userId, string refreshToken);
     public Task<ServiceResult<bool>> ForgotPasswordAsync(string email);
     public Task<ServiceResult<bool>> ResetPasswordAsync(ResetPasswordDto resetPasswordDto);
+    public Task<ServiceResult<bool>> SendEmailConfirmationAsync(string email);
+    public Task<ServiceResult<bool>> ConfirmEmailAsync(ConfirmEmailDto confirmEmailDto);
 }
