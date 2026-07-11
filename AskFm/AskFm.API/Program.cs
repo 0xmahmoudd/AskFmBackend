@@ -33,6 +33,10 @@ public class Program
 
         builder.Services.AddControllers();
         builder.Services.AddOpenApi();
+        builder.Services.AddResponseCompression(options =>
+        {
+            options.EnableForHttps = true;
+        });
 
         Env.Load();
         string ConnectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") 
@@ -184,21 +188,17 @@ public class Program
                 {
                     OnTokenValidated = async context =>
                     {
-                        var jti = context.Principal.Claims.FirstOrDefault(c => c.Type == "jti")?.Value;
-                        var redis = context.HttpContext.RequestServices.GetRequiredService<RedisCacheService>();
-
-                        var cachedToken = await redis.GetCacheAsync<int>(AppConstants.JwtCacheKey(jti));
-                        if (cachedToken <= 0)
+                        var jti = context.Principal?.Claims.FirstOrDefault(c => c.Type == "jti")?.Value;
+                        if (jti != null)
                         {
-                            context.Fail("Token revoked or expired");
+                            var redis = context.HttpContext.RequestServices.GetRequiredService<RedisCacheService>();
+                            var cachedToken = await redis.GetCacheAsync<int>(AppConstants.JwtCacheKey(jti));
+                            if (cachedToken <= 0)
+                            {
+                                context.Fail("Token revoked or expired");
+                            }
                         }
-                    }
-                };
-
-
-                // Enable JWT authentication for SignalR
-                Options.Events = new JwtBearerEvents
-                {
+                    },
                     OnMessageReceived = context =>
                     {
                         var accessToken = context.Request.Query["access_token"];
@@ -267,6 +267,7 @@ public class Program
             });
         }
 
+        app.UseResponseCompression();
         app.UseHttpsRedirection();
         app.UseStaticFiles();
 

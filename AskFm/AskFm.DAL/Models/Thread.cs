@@ -20,7 +20,7 @@ public class Thread : ITrackable
     public virtual ICollection<ThreadLike>? ThreadLikes { get; set; }
     public virtual ICollection<SavedThreads>? SavedThreads { get; set; }
     public bool IsDeleted { get; set; }
-    public DateTime DeletedAt { get; set; }
+    public DateTime? DeletedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public DateTime CreatedAt { get; set; }
 }

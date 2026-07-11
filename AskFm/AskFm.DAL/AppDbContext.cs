@@ -33,9 +33,10 @@ public class AppDbContext : IdentityDbContext<ApplicationUser,IdentityRole<int>,
                      .Where(t => typeof(ITrackable).IsAssignableFrom(t.ClrType)))
         {
 
-            modelBuilder.Entity(entityType.ClrType).Property<DateTime>("DeletedAt")
+            modelBuilder.Entity(entityType.ClrType).Property<DateTime?>("DeletedAt")
                 .HasColumnType("DATETIME")
-                .HasDefaultValueSql("GETUTCDATE()");
+                .IsRequired(false)
+                .HasDefaultValueSql(null);
 
             modelBuilder.Entity(entityType.ClrType).Property<DateTime>("UpdatedAt")
                 .HasColumnType("DATETIME")
@@ -77,7 +78,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser,IdentityRole<int>,
             {
                 case EntityState.Added:
                     entry.Entity.CreatedAt = DateTime.UtcNow;
-                    entry.Entity.DeletedAt = DateTime.UtcNow;;
+                    entry.Entity.DeletedAt = null;
                     entry.Entity.UpdatedAt = DateTime.UtcNow;
                     entry.Entity.IsDeleted = false;
                     break;

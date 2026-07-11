@@ -88,7 +88,7 @@ public class AuthService : IAuthService
             var errors = new List<string> { "Invalid Request Data" };
             return await ServiceResult<AuthResponseDTO>.Failure(errors);
         }
-        var oldUser = _userManager.FindByEmailAsync(request.Email).Result;
+        var oldUser = await _userManager.FindByEmailAsync(request.Email);
         if (oldUser != null && oldUser.IsDeleted)
         {
             var errors = new List<string> { "Email already exist" };
@@ -177,7 +177,7 @@ public class AuthService : IAuthService
             return await ServiceResult<AuthResponseDTO>.Failure(errors);
         }
 
-        var user = _unitOfWork.Users.GetById(id);
+        var user = await _unitOfWork.Users.GetByIdAsync(id);
         if (user == null)
         {
             var errors = new List<string> { "Invalid User." };
@@ -247,7 +247,7 @@ public class AuthService : IAuthService
         var resetUrl =
             $"{_configuration.GetValue<string>("ClientUrl")}/app/Auth/reset-password?email={email}&token={token}";
 
-        _emailSender.SendEmailAsync(email, "AskFm: Reset Password", resetUrl);
+        await _emailSender.SendEmailAsync(email, "AskFm: Reset Password", resetUrl);
 
         return await ServiceResult<bool>.Success(true);
     }
@@ -318,9 +318,7 @@ public class AuthService : IAuthService
     private async Task<RefreshTokenDto> generateRefreshToken()
     {
         var randomNumber = new byte[32];
-
-        using var generator = new RNGCryptoServiceProvider();
-
+        using var generator = RandomNumberGenerator.Create();
         generator.GetBytes(randomNumber);
 
         return new RefreshTokenDto
