@@ -3,6 +3,7 @@ using AskFm.DAL.Enums;
 using AskFm.DAL.Interfaces;
 using AskFm.DAL.Models;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Thread = AskFm.DAL.Models.Thread;
 
@@ -127,31 +128,30 @@ public class ThreadService : IThreadService
     {
         try
         {
-            var thread = await _unitOfWork.Threads.FindAsync(
-                predicate: t => t.Id == id && !t.IsDeleted,
-                includes: new[] { "Asker", "Asked", "Comments", "ThreadLikes" }
-            );
+            var query = _unitOfWork.Threads.GetAll(trackChanges: false)
+                .Where(t => t.Id == id && !t.IsDeleted)
+                .Select(t => new ThreadResponseDto
+                {
+                    Id = t.Id,
+                    QuestionContent = t.QuestionContent,
+                    AnswerContent = t.AnswerContent,
+                    Status = t.Status,
+                    IsAnonymous = t.isAnonymous,
+                    CreatedAt = t.CreatedAt,
+                    AskerId = t.AskerId ?? 0,
+                    AskerName = t.isAnonymous ? "Anonymous" : (t.Asker != null ? t.Asker.Name : null),
+                    AskedId = t.AskedId,
+                    AskedName = t.Asked != null ? t.Asked.Name : null,
+                    LikesCount = t.ThreadLikes.Count(),
+                    CommentsCount = t.Comments.Count()
+                });
 
-            if (thread == null)
+            var threadDto = await query.FirstOrDefaultAsync();
+
+            if (threadDto == null)
             {
                 return await ServiceResult<ThreadResponseDto>.Failure(new List<string>() { "Thread not found" });
             }
-
-            var threadDto = new ThreadResponseDto
-            {
-                Id = thread.Id,
-                QuestionContent = thread.QuestionContent,
-                AnswerContent = thread.AnswerContent,
-                Status = thread.Status,
-                IsAnonymous = thread.isAnonymous,
-                CreatedAt = thread.CreatedAt,
-                AskerId = thread.AskerId ?? 0,
-                AskerName = thread.isAnonymous ? "Anonymous" : thread.Asker?.Name,
-                AskedId = thread.AskedId,
-                AskedName = thread.Asked?.Name,
-                LikesCount = thread.ThreadLikes?.Count ?? 0,
-                CommentsCount = thread.Comments?.Count ?? 0
-            };
 
             return await ServiceResult<ThreadResponseDto>.Success(threadDto);
         }
@@ -168,34 +168,29 @@ public class ThreadService : IThreadService
         {
             int skipCount = (page - 1) * pageSize;
 
-            // Get all threads for user, paginated
-            var threads = await _unitOfWork.Threads.GetPagedAsync(
-                skipCount,
-                pageSize + 1,
-                t => t.CreatedAt,
-                false,
-                t => t.AskedId == askedId && t.Status != ThreadStatus.Hidden,
-                new[] { "Asker", "Asked", "Comments", "ThreadLikes" }
-            );
+            var query = _unitOfWork.Threads.GetAll(trackChanges: false)
+                .Where(t => t.AskedId == askedId && t.Status != ThreadStatus.Hidden)
+                .OrderByDescending(t => t.CreatedAt)
+                .Select(t => new ThreadResponseDto
+                {
+                    Id = t.Id,
+                    QuestionContent = t.QuestionContent,
+                    AnswerContent = t.AnswerContent,
+                    Status = t.Status,
+                    IsAnonymous = t.isAnonymous,
+                    CreatedAt = t.CreatedAt,
+                    AskerId = t.AskerId ?? 0,
+                    AskerName = t.isAnonymous ? "Anonymous" : (t.Asker != null ? t.Asker.Name : null),
+                    AskedId = t.AskedId,
+                    AskedName = t.Asked != null ? t.Asked.Name : null,
+                    LikesCount = t.ThreadLikes.Count(),
+                    CommentsCount = t.Comments.Count()
+                });
+
+            var threads = await query.Skip(skipCount).Take(pageSize + 1).ToListAsync();
 
             bool hasMore = threads.Count > pageSize;
-            var trimmed = threads.Take(pageSize).ToList();
-
-            var threadDtos = trimmed.Select(thread => new ThreadResponseDto
-            {
-                Id = thread.Id,
-                QuestionContent = thread.QuestionContent,
-                AnswerContent = thread.AnswerContent,
-                Status = thread.Status,
-                IsAnonymous = thread.isAnonymous,
-                CreatedAt = thread.CreatedAt,
-                AskerId = thread.AskerId ?? 0,
-                AskerName = thread.isAnonymous ? "Anonymous" : thread.Asker?.Name,
-                AskedId = thread.AskedId,
-                AskedName = thread.Asked?.Name,
-                LikesCount = thread.ThreadLikes?.Count ?? 0,
-                CommentsCount = thread.Comments?.Count ?? 0
-            }).ToList();
+            var threadDtos = threads.Take(pageSize).ToList();
 
             var response = new PagedResponseDto<ThreadResponseDto>
             {
@@ -294,36 +289,28 @@ public class ThreadService : IThreadService
         {
             int skipCount = (page - 1) * pageSize;
 
-            // var totalCount = await _unitOfWork.Threads.CountAsync();
+            var query = _unitOfWork.Threads.GetAll(trackChanges: false)
+                .OrderByDescending(t => t.CreatedAt)
+                .Select(t => new ThreadResponseDto
+                {
+                    Id = t.Id,
+                    QuestionContent = t.QuestionContent,
+                    AnswerContent = t.AnswerContent,
+                    Status = t.Status,
+                    IsAnonymous = t.isAnonymous,
+                    CreatedAt = t.CreatedAt,
+                    AskerId = t.AskerId ?? 0,
+                    AskerName = t.isAnonymous ? "Anonymous" : (t.Asker != null ? t.Asker.Name : null),
+                    AskedId = t.AskedId,
+                    AskedName = t.Asked != null ? t.Asked.Name : null,
+                    LikesCount = t.ThreadLikes.Count(),
+                    CommentsCount = t.Comments.Count()
+                });
 
-            var threads = await _unitOfWork.Threads.GetPagedAsync(
-                skipCount,
-                pageSize + 1,
-                t => t.CreatedAt,
-                false,
-                t => true,
-                new[] { "Asker", "Asked", "Comments", "ThreadLikes" }
-            );
+            var threads = await query.Skip(skipCount).Take(pageSize + 1).ToListAsync();
 
             bool hasMore = threads.Count > pageSize;
-
-            var trimmed = threads.Take(pageSize).ToList();
-
-            var threadDtos = trimmed.Select(thread => new ThreadResponseDto
-            {
-                Id = thread.Id,
-                QuestionContent = thread.QuestionContent,
-                AnswerContent = thread.AnswerContent,
-                Status = thread.Status,
-                IsAnonymous = thread.isAnonymous,
-                CreatedAt = thread.CreatedAt,
-                AskerId = thread.AskerId ?? 0,
-                AskerName = thread.isAnonymous ? "Anonymous" : thread.Asker?.Name,
-                AskedId = thread.AskedId,
-                AskedName = thread.Asked?.Name,
-                LikesCount = thread.ThreadLikes?.Count ?? 0,
-                CommentsCount = thread.Comments?.Count ?? 0
-            }).ToList();
+            var threadDtos = threads.Take(pageSize).ToList();
 
             var response = new PagedResponseDto<ThreadResponseDto>
             {
@@ -393,43 +380,29 @@ public class ThreadService : IThreadService
 
             followedUserIds.Add(userId);
 
-            var totalCount = await _unitOfWork.Threads.CountAsync(t =>
-                followedUserIds.Contains(t.AskedId) && t.Status == ThreadStatus.Answered);
+            var query = _unitOfWork.Threads.GetAll(trackChanges: false)
+                .Where(t => followedUserIds.Contains(t.AskedId) && t.Status == ThreadStatus.Answered)
+                .OrderByDescending(t => t.CreatedAt)
+                .Select(t => new ThreadResponseDto
+                {
+                    Id = t.Id,
+                    QuestionContent = t.QuestionContent,
+                    AnswerContent = t.AnswerContent,
+                    Status = t.Status,
+                    IsAnonymous = t.isAnonymous,
+                    CreatedAt = t.CreatedAt,
+                    AskerId = t.AskerId ?? 0,
+                    AskerName = t.isAnonymous ? "Anonymous" : (t.Asker != null ? t.Asker.Name : null),
+                    AskedId = t.AskedId,
+                    AskedName = t.Asked != null ? t.Asked.Name : null,
+                    LikesCount = t.ThreadLikes.Count(),
+                    CommentsCount = t.Comments.Count()
+                });
 
-            var threads = await _unitOfWork.Threads.GetPagedAsync(
-                skipCount,
-                pageSize + 1,
-                t => t.CreatedAt,
-                false,
-                t => followedUserIds.Contains(t.AskedId) && t.Status == ThreadStatus.Answered,
-                new[] { "Asker", "Asked", "Comments", "ThreadLikes" }
-            );
+            var threads = await query.Skip(skipCount).Take(pageSize + 1).ToListAsync();
 
-            // asking if still  there is some remaining pages withou using COUNT()
             bool hasMore = threads.Count > pageSize;
-
-            /* after getting the threads with size of pageSize + 1
-             to find if there are remaining threads (nextPage) without usint TotalCound and totalPages
-             now we need to return back only the PageSize of threads
-             that what i'm doing here in the trimmed list,
-             */
-            var trimmed = threads.Take(pageSize).ToList();
-
-            var threadDtos = trimmed.Select(thread => new ThreadResponseDto
-            {
-                Id = thread.Id,
-                QuestionContent = thread.QuestionContent,
-                AnswerContent = thread.AnswerContent,
-                Status = thread.Status,
-                IsAnonymous = thread.isAnonymous,
-                CreatedAt = thread.CreatedAt,
-                AskerId = thread.AskerId ?? 0,
-                AskerName = thread.isAnonymous ? "Anonymous" : thread.Asker?.Name,
-                AskedId = thread.AskedId,
-                AskedName = thread.Asked?.Name,
-                LikesCount = thread.ThreadLikes?.Count ?? 0,
-                CommentsCount = thread.Comments?.Count ?? 0
-            }).ToList();
+            var threadDtos = threads.Take(pageSize).ToList();
 
             var response = new PagedResponseDto<ThreadResponseDto>
             {
@@ -537,43 +510,30 @@ public class ThreadService : IThreadService
         {
             int skipCount = (page - 1) * pageSize;
 
-            // var totalCount = await _unitOfWork.SavedThreads.CountAsync(st => st.UserId == userId);
+            var query = _unitOfWork.SavedThreads.GetAll(trackChanges: false)
+                .Where(st => st.UserId == userId)
+                .OrderByDescending(st => st.CreatedAt)
+                .Select(st => new ThreadResponseDto
+                {
+                    Id = st.Thread.Id,
+                    QuestionContent = st.Thread.QuestionContent,
+                    AnswerContent = st.Thread.AnswerContent,
+                    Status = st.Thread.Status,
+                    IsAnonymous = st.Thread.isAnonymous,
+                    CreatedAt = st.Thread.CreatedAt,
+                    AskerId = st.Thread.AskerId ?? 0,
+                    AskerName = st.Thread.isAnonymous ? "Anonymous" : (st.Thread.Asker != null ? st.Thread.Asker.Name : null),
+                    AskedId = st.Thread.AskedId,
+                    AskedName = st.Thread.Asked != null ? st.Thread.Asked.Name : null,
+                    LikesCount = st.Thread.ThreadLikes.Count(),
+                    CommentsCount = st.Thread.Comments.Count(),
+                    SavedAt = st.CreatedAt
+                });
 
-            var savedThreads = await _unitOfWork.SavedThreads.GetPagedAsync(
-                skipCount,
-                pageSize + 1,
-                st => st.CreatedAt,
-                false,
-                st => st.UserId == userId,
-                new[] { "Thread", "Thread.Asker", "Thread.Asked", "Thread.Comments", "Thread.ThreadLikes" }
-            );
+            var threads = await query.Skip(skipCount).Take(pageSize + 1).ToListAsync();
 
-
-            bool hasMore = savedThreads.Count > pageSize;
-
-            /* after getting the threads with size of pageSize + 1
-             to find if there are remaining threads (nextPage) without usint TotalCound and totalPages
-             now we need to return back only the PageSize of threads
-             that what i'm doing here in the trimmed list,
-            */
-            var trimmed = savedThreads.Take(pageSize).ToList();
-
-            var threadDtos = trimmed.Select(st => new ThreadResponseDto
-            {
-                Id = st.Thread.Id,
-                QuestionContent = st.Thread.QuestionContent,
-                AnswerContent = st.Thread.AnswerContent,
-                Status = st.Thread.Status,
-                IsAnonymous = st.Thread.isAnonymous,
-                CreatedAt = st.Thread.CreatedAt,
-                AskerId = st.Thread.AskerId ?? 0,
-                AskerName = st.Thread.isAnonymous ? "Anonymous" : st.Thread.Asker?.Name,
-                AskedId = st.Thread.AskedId,
-                AskedName = st.Thread.Asked?.Name,
-                LikesCount = st.Thread.ThreadLikes?.Count ?? 0,
-                CommentsCount = st.Thread.Comments?.Count ?? 0,
-                SavedAt = st.CreatedAt
-            }).ToList();
+            bool hasMore = threads.Count > pageSize;
+            var threadDtos = threads.Take(pageSize).ToList();
 
             var response = new PagedResponseDto<ThreadResponseDto>
             {
