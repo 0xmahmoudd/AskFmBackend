@@ -117,7 +117,8 @@ public class CommentLikeServiceTest
                 repo.FindAsync(
                     It.Is<Expression<Func<CommentLike, bool>>>(expr =>
                         ExpressionMatches(expr, userId, commentId)),
-                    It.IsAny<string[]>()
+                    It.IsAny<string[]>(),
+                    It.IsAny<bool>()
                 ))
             .Returns(Task.FromResult(commentLike));
 
@@ -198,7 +199,7 @@ public class CommentLikeServiceTest
             .ReturnsAsync(comment);
         
         _mockCommentLikeRepository.Setup(repo => 
-                repo.FindAllAsync(It.IsAny<Expression<Func<CommentLike, bool>>>(), It.IsAny<string[]>()))
+                repo.FindAllAsync(It.IsAny<Expression<Func<CommentLike, bool>>>(), It.IsAny<string[]>(), It.IsAny<bool>()))
             .ReturnsAsync(commentLikes);
         
         // Act
@@ -236,7 +237,7 @@ public class CommentLikeServiceTest
             .ReturnsAsync(comment);
         
         _mockCommentLikeRepository.Setup(repo => 
-                repo.FindAllAsync(It.IsAny<Expression<Func<CommentLike, bool>>>(), It.IsAny<string[]>()))
+                repo.FindAllAsync(It.IsAny<Expression<Func<CommentLike, bool>>>(), It.IsAny<string[]>(), It.IsAny<bool>()))
             .ReturnsAsync(commentLikes);
         
         // Act

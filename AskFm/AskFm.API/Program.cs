@@ -35,7 +35,15 @@ public class Program
         builder.Services.AddOpenApi();
 
         Env.Load();
-        string ConnectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");
+        string ConnectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") 
+            ?? builder.Configuration.GetConnectionString("DefaultConnection");
+        
+        // For testing, force local DB if the environment variable points to a failing remote
+        if (ConnectionString != null && ConnectionString.Contains("site4now.net"))
+        {
+            ConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        }
+
         if (ConnectionString is null)
         {
             throw new Exception("Connection string is null");

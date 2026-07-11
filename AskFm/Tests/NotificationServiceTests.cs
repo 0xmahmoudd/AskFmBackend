@@ -281,7 +281,7 @@ namespace AskFm.BLL.Tests.Services
                 }
             };
 
-            _unitOfWorkMock.Setup(p => p.Notifications.FindAllAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Notification, bool>>>(), null))
+            _unitOfWorkMock.Setup(p => p.Notifications.FindAllAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Notification, bool>>>(), null, It.IsAny<bool>()))
                 .ReturnsAsync(unreadNotifications);
             _unitOfWorkMock.Setup(p => p.SaveAsync()).ReturnsAsync(1);
 

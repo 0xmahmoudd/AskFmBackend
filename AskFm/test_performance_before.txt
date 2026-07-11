@@ -1,0 +1,19 @@
+AskFm Performance Stress Test Before Enhancements
+=================================================
+Data Seeded: 10,000 dummy users, 1 thread, 10,000 likes, and 5,000 comments.
+
+1. Measuring 'GetFeed' performance before enhancement...
+   Endpoint: /api/Seed/test-feed
+   Result: TIMEOUT EXCEEDED (> 30,000 ms)
+   Error: Microsoft.Data.SqlClient.SqlException - Execution Timeout Expired.
+   Reason: N+1 queries and Cartesian Explosion when loading related collections (Likes, Comments).
+
+2. Measuring 'GetThread' performance before enhancement...
+   Endpoint: /api/Seed/test-thread
+   Result: TIMEOUT EXCEEDED (> 30,000 ms)
+
+3. Measuring 'GetUnreadNotifications' performance before enhancement...
+   Endpoint: /api/Seed/test-notifications
+   Result: TIMEOUT EXCEEDED (> 30,000 ms)
+
+Conclusion: The current implementation completely fails and crashes the server under realistic production load due to inefficient Entity Framework queries loading full collections into memory.

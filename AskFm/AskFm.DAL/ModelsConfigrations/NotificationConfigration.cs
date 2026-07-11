@@ -11,7 +11,7 @@ public class NotificationConfigration : IEntityTypeConfiguration<Notification>
         builder.HasKey(n => n.Id);
 
         builder.Property(n => n.Message)
-            .HasColumnType("NVARCHAR");
+            .HasColumnType("NVARCHAR(500)");
 
         builder.Property(n => n.IsRead)
             .IsRequired();

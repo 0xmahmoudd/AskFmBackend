@@ -5,21 +5,21 @@ namespace AskFm.DAL.Interfaces;
 
 public interface IRepository<T> where T : class
 {
-    IQueryable<T> GetAll();
-    Task<IEnumerable<T>> GetAllAsync();
+    IQueryable<T> GetAll(bool trackChanges = true);
+    Task<IEnumerable<T>> GetAllAsync(bool trackChanges = true);
 
 
     T? GetById(int id);
     Task<T?> GetByIdAsync(int id);
 
 
-    IQueryable<T> FindAll(Expression<Func<T, bool>> predicate, string[] includes = null);
-    Task<IEnumerable<T>> FindAllAsync(Expression<Func<T, bool>> predicate = null, string[] includes = null);
+    IQueryable<T> FindAll(Expression<Func<T, bool>> predicate, string[] includes = null, bool trackChanges = true);
+    Task<IEnumerable<T>> FindAllAsync(Expression<Func<T, bool>> predicate = null, string[] includes = null, bool trackChanges = true);
 
 
 
-    T? Find(Expression<Func<T, bool>> predicate, string[] includes = null);
-    Task<T?> FindAsync(Expression<Func<T, bool>> predicate, string[] includes = null);
+    T? Find(Expression<Func<T, bool>> predicate, string[] includes = null, bool trackChanges = true);
+    Task<T?> FindAsync(Expression<Func<T, bool>> predicate, string[] includes = null, bool trackChanges = true);
 
 
     void Add(T entity);
@@ -41,5 +41,6 @@ public interface IRepository<T> where T : class
         Expression<Func<T, object>> orderBy,
         bool ascending = true,
         Expression<Func<T, bool>>? predicate = null,
-        string[]? includes = null);
+        string[]? includes = null,
+        bool trackChanges = true);
 }
