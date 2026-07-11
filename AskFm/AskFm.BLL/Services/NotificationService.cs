@@ -4,6 +4,7 @@ using AskFm.DAL.Enums;
 using AskFm.DAL.Interfaces;
 using AskFm.DAL.Models;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 
 namespace AskFm.BLL.Services;
 
@@ -28,11 +29,13 @@ public class NotificationService : INotificationService
 
             var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
+            var actorDictionary = await _notificationRepository.GetActorUsersForNotifications(notifications);
+
             var notificationDtos = new List<NotificationDto>();
 
             foreach (var notification in notifications)
             {
-                var actorUser = await _notificationRepository.GetActorUserByResourceId(notification.ResourceId, notification.Type);
+                actorDictionary.TryGetValue(notification.ResourceId, out var actorUser);
                 notificationDtos.Add(new NotificationDto
                 {
                     Id = notification.Id,
@@ -78,11 +81,13 @@ public class NotificationService : INotificationService
 
             var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
+            var actorDictionary = await _notificationRepository.GetActorUsersForNotifications(notifications);
+
             var notificationDtos = new List<NotificationDto>();
 
             foreach (var notification in notifications)
             {
-                var actorUser = await _notificationRepository.GetActorUserByResourceId(notification.ResourceId, notification.Type);
+                actorDictionary.TryGetValue(notification.ResourceId, out var actorUser);
                 notificationDtos.Add(new NotificationDto
                 {
                     Id = notification.Id,
@@ -144,16 +149,8 @@ public class NotificationService : INotificationService
     {
         try
         {
-            var unreadNotifications = await _unitOfWork.Notifications.FindAllAsync(n => n.UserId == userId && !n.IsRead);
+            await _notificationRepository.MarkAllAsReadAsync(userId);
 
-            foreach (var notification in unreadNotifications)
-            {
-                notification.IsRead = true;
-                _unitOfWork.Notifications.Update(notification);
-            }
-
-            await _unitOfWork.SaveAsync();
-            
             var count = await _unitOfWork.Notifications.CountAsync(n => n.UserId == userId && !n.IsRead);
             await _hubContext.Clients.Group($"user_{userId}").SendAsync("UnreadCountUpdated", count);
 

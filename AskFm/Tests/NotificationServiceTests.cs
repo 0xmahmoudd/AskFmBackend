@@ -70,7 +70,8 @@ namespace AskFm.BLL.Tests.Services
             var actorUser = new ApplicationUser { Id = 2, UserName = "test_user", AvatarPath = "test.jpg" };
 
             _notificationRepositoryMock.Setup(p => p.GetAllNotifications(userId, pageNumber, pageSize)).ReturnsAsync((notifications, totalCount));
-            _notificationRepositoryMock.Setup(p => p.GetActorUserByResourceId(100, NotificationStatus.QUESTION)).ReturnsAsync(actorUser);
+            var actorDictionary = new Dictionary<int, ApplicationUser> { { 100, actorUser } };
+            _notificationRepositoryMock.Setup(p => p.GetActorUsersForNotifications(It.IsAny<IEnumerable<Notification>>())).ReturnsAsync(actorDictionary);
 
             // Act
             var result = await _notificationService.GetUserNotifications(userId, pageNumber, pageSize);
@@ -114,7 +115,8 @@ namespace AskFm.BLL.Tests.Services
             var totalCount = 1;
 
             _notificationRepositoryMock.Setup(p => p.GetAllNotifications(userId, pageNumber, pageSize)).ReturnsAsync((notifications, totalCount));
-            _notificationRepositoryMock.Setup(p => p.GetActorUserByResourceId(100, NotificationStatus.QUESTION)).ReturnsAsync((ApplicationUser)null);
+            var actorDictionary = new Dictionary<int, ApplicationUser>();
+            _notificationRepositoryMock.Setup(p => p.GetActorUsersForNotifications(It.IsAny<IEnumerable<Notification>>())).ReturnsAsync(actorDictionary);
 
             // Act
             var result = await _notificationService.GetUserNotifications(userId, pageNumber, pageSize);
@@ -158,7 +160,8 @@ namespace AskFm.BLL.Tests.Services
             var actorUser = new ApplicationUser { Id = 2, UserName = "test_user", AvatarPath = "test.jpg" };
 
             _notificationRepositoryMock.Setup(p => p.GetNotificationsByType(userId, NotificationStatus.ANSWER, pageNumber, pageSize)).ReturnsAsync((notifications, totalCount));
-            _notificationRepositoryMock.Setup(p => p.GetActorUserByResourceId(100, NotificationStatus.ANSWER)).ReturnsAsync(actorUser);
+            var actorDictionary = new Dictionary<int, ApplicationUser> { { 100, actorUser } };
+            _notificationRepositoryMock.Setup(p => p.GetActorUsersForNotifications(It.IsAny<IEnumerable<Notification>>())).ReturnsAsync(actorDictionary);
 
             // Act
             var result = await _notificationService.GetNotificationsByType(userId, category, pageNumber, pageSize);
@@ -281,9 +284,7 @@ namespace AskFm.BLL.Tests.Services
                 }
             };
 
-            _unitOfWorkMock.Setup(p => p.Notifications.FindAllAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Notification, bool>>>(), null, It.IsAny<bool>()))
-                .ReturnsAsync(unreadNotifications);
-            _unitOfWorkMock.Setup(p => p.SaveAsync()).ReturnsAsync(1);
+            _notificationRepositoryMock.Setup(p => p.MarkAllAsReadAsync(userId)).Returns(Task.CompletedTask);
 
             // Act
             var result = await _notificationService.MarkAllNotificationsAsRead(userId);
@@ -292,9 +293,7 @@ namespace AskFm.BLL.Tests.Services
             Assert.True(result.success);
             Assert.Null(result.Errors);
             Assert.Equal("All notifications marked as read", result.Data);
-            Assert.All(unreadNotifications, n => Assert.True(n.IsRead));
-            _unitOfWorkMock.Verify(p => p.Notifications.Update(It.IsAny<Notification>()), Times.Exactly(2));
-            _unitOfWorkMock.Verify(p => p.SaveAsync(), Times.Once);
+            _notificationRepositoryMock.Verify(p => p.MarkAllAsReadAsync(userId), Times.Once);
         }
 
         [Fact]
