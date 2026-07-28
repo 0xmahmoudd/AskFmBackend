@@ -73,11 +73,28 @@ public class NotificationService : INotificationService
     {
         try
         {
-            // Convert category to uppercase and match with enum
-            if (!Enum.TryParse<NotificationStatus>(category.ToUpper(), out var notificationType))
-                return await ServiceResult<List<NotificationDto>>.Failure(new List<string> { $"Invalid notification category: {category}" });
+            var upperCategory = category.ToUpper();
+            List<NotificationStatus> statuses = new List<NotificationStatus>();
 
-            var (notifications, totalCount) = await _notificationRepository.GetNotificationsByType(userId, notificationType, pageNumber, pageSize);
+            if (upperCategory == "COMMENT" || upperCategory == "REPLAY")
+            {
+                statuses.Add(NotificationStatus.REPLAY);
+            }
+            else if (upperCategory == "LIKE")
+            {
+                statuses.Add(NotificationStatus.QUESTION_LIKE);
+                statuses.Add(NotificationStatus.COMMENT_LIKE);
+            }
+            else if (Enum.TryParse<NotificationStatus>(upperCategory, out var parsedType))
+            {
+                statuses.Add(parsedType);
+            }
+            else
+            {
+                return await ServiceResult<List<NotificationDto>>.Failure(new List<string> { $"Invalid notification category: {category}" });
+            }
+
+            var (notifications, totalCount) = await _notificationRepository.GetNotificationsByTypes(userId, statuses, pageNumber, pageSize);
 
             var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 

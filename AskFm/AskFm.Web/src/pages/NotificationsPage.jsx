@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getUserNotifications, getNotificationsByType, markNotificationAsRead, markAllNotificationsAsRead } from '../api/notification';
 import { useNotification } from '../context/NotificationContext';
 import { parseApiError } from '../api/client';
 import { Spinner } from '../components/Spinner';
 import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
-import { Bell, CheckCheck, Filter } from 'lucide-react';
+import { Bell, CheckCheck, ChevronRight } from 'lucide-react';
 
 export const NotificationsPage = () => {
+  const navigate = useNavigate();
   const { fetchUnreadCount, addToast } = useNotification();
   const [notifications, setNotifications] = useState([]);
-  const [category, setCategory] = useState('ALL'); // 'ALL' | 'FOLLOW' | 'LIKE' | 'COMMENT' | 'ANSWER'
+  const [category, setCategory] = useState('ALL'); // 'ALL' | 'FOLLOW' | 'LIKE' | 'COMMENT' | 'ANSWER' | 'QUESTION'
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -53,7 +55,8 @@ export const NotificationsPage = () => {
     return () => window.removeEventListener('askfm_notification', handleNotification);
   }, [fetchNotifications]);
 
-  const handleMarkRead = async (id) => {
+  const handleMarkRead = async (e, id) => {
+    e.stopPropagation();
     try {
       await markNotificationAsRead(id);
       fetchNotifications();
@@ -74,6 +77,30 @@ export const NotificationsPage = () => {
     }
   };
 
+  const handleNotificationClick = async (notif) => {
+    const notifId = notif.id || notif.Id;
+    const isRead = notif.isRead || notif.IsRead;
+    const type = (notif.type || notif.Type || '').toUpperCase();
+    const resourceId = notif.resourceId || notif.ResourceId;
+
+    if (!isRead) {
+      try {
+        await markNotificationAsRead(notifId);
+        fetchUnreadCount();
+      } catch (err) {
+        // ignore error
+      }
+    }
+
+    if (type === 'FOLLOW') {
+      if (resourceId) navigate(`/profile/${resourceId}`);
+    } else if (type === 'QUESTION') {
+      navigate('/inbox');
+    } else if (resourceId) {
+      navigate(`/thread/${resourceId}`);
+    }
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -89,7 +116,7 @@ export const NotificationsPage = () => {
 
       {/* Category filter tabs */}
       <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginBottom: '16px', paddingBottom: '4px' }}>
-        {['ALL', 'FOLLOW', 'LIKE', 'COMMENT', 'ANSWER'].map((cat) => (
+        {['ALL', 'FOLLOW', 'LIKE', 'COMMENT', 'ANSWER', 'QUESTION'].map((cat) => (
           <button
             key={cat}
             className={`btn ${category === cat ? 'btn-primary' : 'btn-secondary'}`}
@@ -118,18 +145,22 @@ export const NotificationsPage = () => {
               return (
                 <div
                   key={notifId}
+                  onClick={() => handleNotificationClick(notif)}
                   style={{
                     display: 'flex',
-                    justify: 'space-between',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
                     padding: '12px 14px',
                     borderRadius: 'var(--radius-sm)',
-                    background: isRead ? 'transparent' : 'var(--primary-light)',
-                    borderLeft: isRead ? 'none' : '4px solid var(--primary)',
+                    background: isRead ? '#ffffff' : 'var(--primary-light)',
+                    borderLeft: isRead ? '4px solid transparent' : '4px solid var(--primary)',
+                    borderBottom: '1px solid var(--border-color)',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s',
                   }}
                 >
-                  <div>
-                    <p style={{ fontWeight: isRead ? '400' : '600', fontSize: '14px', color: 'var(--text-main)' }}>
+                  <div style={{ flex: 1, paddingRight: '12px' }}>
+                    <p style={{ fontWeight: isRead ? '400' : '700', fontSize: '14px', color: 'var(--text-main)', marginBottom: '4px' }}>
                       {notif.message || notif.Message}
                     </p>
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
@@ -137,15 +168,18 @@ export const NotificationsPage = () => {
                     </span>
                   </div>
 
-                  {!isRead && (
-                    <button
-                      className="btn btn-secondary"
-                      onClick={() => handleMarkRead(notifId)}
-                      style={{ fontSize: '12px', padding: '4px 10px' }}
-                    >
-                      Read
-                    </button>
-                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {!isRead && (
+                      <button
+                        className="btn btn-secondary"
+                        onClick={(e) => handleMarkRead(e, notifId)}
+                        style={{ fontSize: '12px', padding: '4px 10px' }}
+                      >
+                        Read
+                      </button>
+                    )}
+                    <ChevronRight style={{ width: '18px', height: '18px', color: 'var(--text-muted)' }} />
+                  </div>
                 </div>
               );
             })}

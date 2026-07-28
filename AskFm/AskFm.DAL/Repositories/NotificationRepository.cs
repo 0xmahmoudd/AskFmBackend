@@ -29,9 +29,10 @@ public class NotificationRepository : INotificationRepository
         return (notifications, totalCount);
     }
 
-    public async Task<(IEnumerable<Notification> notifications, int totalCount)> GetNotificationsByType(int userId, NotificationStatus status, int pageNumber, int pageSize)
+    public async Task<(IEnumerable<Notification> notifications, int totalCount)> GetNotificationsByTypes(int userId, IEnumerable<NotificationStatus> statuses, int pageNumber, int pageSize)
     {
-        var query = _unitOfWork.Notifications.FindAll(n => n.UserId == userId && n.Type == status);
+        var statusList = statuses.ToList();
+        var query = _unitOfWork.Notifications.FindAll(n => n.UserId == userId && statusList.Contains(n.Type));
 
         var totalCount = await query.CountAsync();
 
