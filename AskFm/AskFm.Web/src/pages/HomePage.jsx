@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { getPersonalizedFeed } from '../api/thread';
 import { useAuth } from '../context/AuthContext';
 import { ThreadCard } from '../components/ThreadCard';
-import { AskBox } from '../components/AskBox';
 import { Spinner } from '../components/Spinner';
 import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
@@ -42,9 +41,6 @@ export const HomePage = () => {
 
   return (
     <div>
-      {/* Ask widget */}
-      <AskBox targetUser={user} onQuestionAsked={fetchFeed} />
-
       <h2 style={{ fontSize: '18px', fontWeight: '800', margin: '20px 0 12px' }}>Your Feed</h2>
 
       {loading ? (

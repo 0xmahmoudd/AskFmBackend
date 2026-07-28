@@ -313,6 +313,7 @@ public class AuthService : IAuthService
             IsAuthenticated = true,
             User = new ReadUserDTO
             {
+                Id = user.Id,
                 Name = user.Name,
                 Email = user.Email,
                 LastSeen = user.LastSeen,

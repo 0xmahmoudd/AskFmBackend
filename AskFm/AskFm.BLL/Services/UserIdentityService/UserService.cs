@@ -198,6 +198,7 @@ public class UserService : IUserService
 
         return await ServiceResult<ReadUserDTO>.Success(new ReadUserDTO()
         {
+            Id = user.Id,
             Name = user.Name,
             Email = user.Email,
             LastSeen = user.LastSeen,

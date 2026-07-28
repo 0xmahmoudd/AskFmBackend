@@ -41,6 +41,7 @@ public class UserController : ControllerBase
         }
         ReadUserDTO readUserDTO = new ReadUserDTO()
         {
+            Id = result.Data.Id,
             Name = result.Data.Name,
             Email = result.Data.Email,
             AvatarPath = result.Data.AvatarPath,

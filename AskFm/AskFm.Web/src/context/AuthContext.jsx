@@ -44,8 +44,9 @@ export const AuthProvider = ({ children }) => {
       if (authData.token) {
         localStorage.setItem('accessToken', authData.token);
       }
-      if (authData.id) {
-        localStorage.setItem('userId', authData.id.toString());
+      const userId = authData.user?.id || authData.user?.Id || authData.id;
+      if (userId) {
+        localStorage.setItem('userId', userId.toString());
       }
       await fetchCurrentUser();
       return { success: true };
@@ -64,8 +65,9 @@ export const AuthProvider = ({ children }) => {
       if (authData.token) {
         localStorage.setItem('accessToken', authData.token);
       }
-      if (authData.id) {
-        localStorage.setItem('userId', authData.id.toString());
+      const userId = authData.user?.id || authData.user?.Id || authData.id;
+      if (userId) {
+        localStorage.setItem('userId', userId.toString());
       }
       await fetchCurrentUser();
       return { success: true };
