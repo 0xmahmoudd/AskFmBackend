@@ -20,11 +20,20 @@ export const ThreadCard = ({ thread, onUpdate }) => {
 
   const threadId = thread.id || thread.Id;
   const isAnswered = (thread.status === 1 || thread.Status === 1) || !!(thread.answerContent || thread.AnswerContent);
-  const asker = thread.isAnonymous || thread.IsAnonymous ? null : (thread.asker || thread.Asker);
-  const asked = thread.asked || thread.Asked;
-  const currentUserId = user?.id || user?.Id;
-  const isAskedMe = asked && (asked.id === currentUserId || asked.Id === currentUserId);
-  const isAskerMe = asker && (asker.id === currentUserId || asker.Id === currentUserId);
+
+  const currentUserId = Number(user?.id || user?.Id);
+
+  const askedId = Number(thread.askedId || thread.AskedId || thread.asked?.id || thread.asked?.Id);
+  const askedName = thread.askedName || thread.AskedName || thread.asked?.name || thread.asked?.Name;
+  const askedAvatar = thread.askedAvatarPath || thread.AskedAvatarPath || thread.asked?.avatarPath;
+
+  const isAnonymous = thread.isAnonymous || thread.IsAnonymous;
+  const askerId = isAnonymous ? null : Number(thread.askerId || thread.AskerId || thread.asker?.id || thread.asker?.Id);
+  const askerName = isAnonymous ? 'Anonymous' : (thread.askerName || thread.AskerName || thread.asker?.name || thread.asker?.Name || 'User');
+  const askerAvatar = isAnonymous ? null : (thread.askerAvatarPath || thread.AskerAvatarPath || thread.asker?.avatarPath);
+
+  const isAskedMe = !!(askedId && currentUserId && askedId === currentUserId);
+  const isAskerMe = !!(askerId && currentUserId && askerId === currentUserId);
 
   const [isLiked, setIsLiked] = useState(thread.isLikedByCurrentUser || false);
   const [likesCount, setLikesCount] = useState(thread.likesCount || thread.LikesCount || 0);
@@ -90,10 +99,10 @@ export const ThreadCard = ({ thread, onUpdate }) => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {asker ? (
-            <Link to={`/profile/${asker.id || asker.Id}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Avatar src={asker.avatarPath || asker.AvatarPath} name={asker.name || asker.Name} size="sm" />
-              <span style={{ fontWeight: '600', fontSize: '14px' }}>{asker.name || asker.Name}</span>
+          {!isAnonymous && askerId ? (
+            <Link to={`/profile/${askerId}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Avatar src={askerAvatar} name={askerName} size="sm" />
+              <span style={{ fontWeight: '600', fontSize: '14px' }}>{askerName}</span>
             </Link>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -101,11 +110,11 @@ export const ThreadCard = ({ thread, onUpdate }) => {
               <span style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text-muted)' }}>Anonymous</span>
             </div>
           )}
-          {asked && (
+          {askedId && askedName && (
             <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
               asked{' '}
-              <Link to={`/profile/${asked.id || asked.Id}`} style={{ fontWeight: '600', color: 'var(--text-main)' }}>
-                {asked.name || asked.Name}
+              <Link to={`/profile/${askedId}`} style={{ fontWeight: '600', color: 'var(--text-main)' }}>
+                {askedName}
               </Link>
             </span>
           )}

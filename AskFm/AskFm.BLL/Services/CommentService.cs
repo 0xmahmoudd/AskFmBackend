@@ -13,11 +13,13 @@ public class CommentService : ICommentService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<CommentService> _logger;
+    private readonly INotificationService _notificationService;
 
-    public CommentService(IUnitOfWork unitOfWork, ILogger<CommentService> logger)
+    public CommentService(IUnitOfWork unitOfWork, ILogger<CommentService> logger, INotificationService notificationService)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
+        _notificationService = notificationService;
     }
 
     public async Task<ServiceResult<CommentResponseDto>> GetCommentAsync(int id)
@@ -40,6 +42,7 @@ public class CommentService : ICommentService
                 Content = comment.Content,
                 UserId = comment.UserId,
                 UserName = comment.User?.Name ?? "Unknown",
+                UserAvatarPath = comment.User?.AvatarPath,
                 ThreadId = comment.ThreadId,
                 CreatedAt = comment.CreatedAt,
                 LikesCount = comment.CommentLikes?.Count ?? 0,
@@ -99,6 +102,23 @@ public class CommentService : ICommentService
 
             await transaction.CommitAsync();
 
+            try
+            {
+                if (thread.AskedId != userId)
+                {
+                    await _notificationService.CreateNotification(
+                        thread.AskedId,
+                        DAL.Enums.NotificationStatus.REPLAY,
+                        comment.Id,
+                        $"{user.Name} commented on your question."
+                    );
+                }
+            }
+            catch (Exception)
+            {
+                // Ignore notification failure
+            }
+
             // Return response dto
             var commentResponseDto = new CommentResponseDto
             {
@@ -106,6 +126,7 @@ public class CommentService : ICommentService
                 Content = comment.Content,
                 UserId = comment.UserId,
                 UserName = user.Name,
+                UserAvatarPath = user.AvatarPath,
                 ThreadId = comment.ThreadId,
                 CreatedAt = comment.CreatedAt,
                 LikesCount = 0,
@@ -154,6 +175,7 @@ public class CommentService : ICommentService
                 Content = c.Content,
                 UserId = c.UserId,
                 UserName = c.User?.Name ?? "Unknown",
+                UserAvatarPath = c.User?.AvatarPath,
                 ThreadId = c.ThreadId,
                 CreatedAt = c.CreatedAt,
                 LikesCount = c.CommentLikes?.Count ?? 0,

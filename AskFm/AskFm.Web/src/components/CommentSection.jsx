@@ -51,10 +51,16 @@ export const CommentSection = ({ threadId }) => {
 
     setSubmitting(true);
     try {
-      await addComment(threadId, newCommentText.trim());
+      const res = await addComment(threadId, newCommentText.trim());
+      const newComment = res.data || res.Data || res;
       addToast('Comment added!', 'success');
       setNewCommentText('');
-      fetchComments();
+      if (newComment && (newComment.id || newComment.Id)) {
+        setComments((prev) => [newComment, ...prev]);
+        setTotalItems((prev) => prev + 1);
+      } else {
+        fetchComments();
+      }
     } catch (err) {
       addToast(parseApiError(err), 'error');
     } finally {
@@ -114,8 +120,11 @@ export const CommentSection = ({ threadId }) => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {comments.map((comment) => {
             const commentId = comment.id || comment.Id;
-            const author = comment.user || comment.User || {};
-            const isOwner = user?.id === author.id || user?.Id === author.Id;
+            const authorName = comment.userName || comment.UserName || comment.user?.name || comment.user?.Name || 'User';
+            const authorAvatar = comment.userAvatarPath || comment.UserAvatarPath || comment.user?.avatarPath || comment.user?.AvatarPath;
+            const commentUserId = Number(comment.userId || comment.UserId || comment.user?.id || comment.user?.Id);
+            const currentUserId = Number(user?.id || user?.Id);
+            const isOwner = currentUserId && commentUserId && currentUserId === commentUserId;
 
             return (
               <div
@@ -130,10 +139,10 @@ export const CommentSection = ({ threadId }) => {
                 }}
               >
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <Avatar src={author.avatarPath || author.AvatarPath} name={author.name || author.Name} size="sm" />
+                  <Avatar src={authorAvatar} name={authorName} size="sm" />
                   <div>
                     <span style={{ fontWeight: '600', fontSize: '13px', marginRight: '8px' }}>
-                      {author.name || author.Name || 'User'}
+                      {authorName}
                     </span>
                     <p style={{ fontSize: '13px', color: 'var(--text-main)', marginTop: '2px' }}>
                       {comment.content || comment.Content}

@@ -19,13 +19,16 @@ public class UserService : IUserService
     private readonly IConfiguration _configuration;
 
 
-    public UserService(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager,  IHttpContextAccessor httpContextAccessor, IEmailSender emailSender, IConfiguration configuration)
+    private readonly INotificationService _notificationService;
+
+    public UserService(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IHttpContextAccessor httpContextAccessor, IEmailSender emailSender, IConfiguration configuration, INotificationService notificationService)
     {
         _unitOfWork = unitOfWork;
         _userManager = userManager;
         _httpContextAccessor = httpContextAccessor;
         _emailSender = emailSender;
         _configuration = configuration;
+        _notificationService = notificationService;
     }
 
 
@@ -113,6 +116,21 @@ public class UserService : IUserService
             await _unitOfWork.Users.UpdateAsync(targetUser);
             await _unitOfWork.SaveAsync();
             await transaction.CommitAsync();
+
+            try
+            {
+                await _notificationService.CreateNotification(
+                    targetUserId,
+                    DAL.Enums.NotificationStatus.FOLLOW,
+                    followerId,
+                    $"{userFollower.Name} started following you."
+                );
+            }
+            catch (Exception)
+            {
+                // Ignore notification errors so follow still completes
+            }
+
             return await ServiceResult<bool>.Success(true);
         }
         catch (Exception)

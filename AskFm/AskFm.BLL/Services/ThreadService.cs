@@ -14,12 +14,14 @@ public class ThreadService : IThreadService
     private IUnitOfWork _unitOfWork;
     private readonly ILogger<ThreadService> _logger;
     private readonly IMapper _mapper;
+    private readonly INotificationService _notificationService;
 
-    public ThreadService(IUnitOfWork unitOfWork, ILogger<ThreadService> logger, IMapper mapper)
+    public ThreadService(IUnitOfWork unitOfWork, ILogger<ThreadService> logger, IMapper mapper, INotificationService notificationService)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
         _mapper = mapper;
+        _notificationService = notificationService;
     }
 
     public async Task<ServiceResult<ThreadResponseDto>> AddThread(int askerId, CreateThreadDto createThreadDto)
@@ -101,6 +103,21 @@ public class ThreadService : IThreadService
             await _unitOfWork.SaveAsync();
 
             await transaction.CommitAsync();
+
+            try
+            {
+                var askerName = thread.isAnonymous ? "Someone (Anonymous)" : askerUser.Name;
+                await _notificationService.CreateNotification(
+                    askedId,
+                    NotificationStatus.QUESTION,
+                    thread.Id,
+                    $"{askerName} asked you a question."
+                );
+            }
+            catch (Exception)
+            {
+                // Ignore notification failure
+            }
 
             var responseDto = new ThreadResponseDto
             {
@@ -256,6 +273,24 @@ public class ThreadService : IThreadService
             await _unitOfWork.SaveAsync();
 
             await transaction.CommitAsync();
+
+            try
+            {
+                if (thread.AskerId.HasValue && thread.AskerId.Value != userId)
+                {
+                    var askedUser = await _unitOfWork.Users.GetByIdAsync(userId);
+                    await _notificationService.CreateNotification(
+                        thread.AskerId.Value,
+                        NotificationStatus.ANSWER,
+                        thread.Id,
+                        $"{askedUser?.Name ?? "Someone"} answered your question."
+                    );
+                }
+            }
+            catch (Exception)
+            {
+                // Ignore notification failure
+            }
 
             var threadDto = new ThreadResponseDto
             {

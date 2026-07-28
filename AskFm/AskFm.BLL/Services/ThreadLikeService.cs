@@ -12,12 +12,14 @@ public class ThreadLikeService : IThreadLikeService
     private IUnitOfWork _unitOfWork;
     private readonly ILogger<CommentLikeService> _logger;
     private readonly IMapper _mapper;
+    private readonly INotificationService _notificationService;
 
-    public ThreadLikeService(IUnitOfWork unitOfWork, ILogger<CommentLikeService> logger, IMapper mapper)
+    public ThreadLikeService(IUnitOfWork unitOfWork, ILogger<CommentLikeService> logger, IMapper mapper, INotificationService notificationService)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
         _mapper = mapper;
+        _notificationService = notificationService;
     }
 
     // add a like on the Thread that has id = id
@@ -93,6 +95,24 @@ public class ThreadLikeService : IThreadLikeService
                 await _unitOfWork.SaveAsync();
 
                 await transaction.CommitAsync();
+
+                try
+                {
+                    if (thread.AskedId != userId)
+                    {
+                        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+                        await _notificationService.CreateNotification(
+                            thread.AskedId,
+                            DAL.Enums.NotificationStatus.QUESTION_LIKE,
+                            thread.Id,
+                            $"{user?.Name ?? "Someone"} liked your post."
+                        );
+                    }
+                }
+                catch (Exception)
+                {
+                    // Ignore notification errors
+                }
 
                 // create and return the response DTO
                 var response = new ThreadLikeResponseDto

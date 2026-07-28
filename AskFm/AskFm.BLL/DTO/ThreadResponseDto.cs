@@ -12,8 +12,10 @@ public class ThreadResponseDto
     public DateTime CreatedAt { get; set; }
     public int? AskerId { get; set; }
     public string? AskerName { get; set; }
+    public string? AskerAvatarPath { get; set; }
     public int AskedId { get; set; }
     public string? AskedName { get; set; }
+    public string? AskedAvatarPath { get; set; }
     public int LikesCount { get; set; }
     public int CommentsCount { get; set; }
     public DateTime? SavedAt { get; set; }
