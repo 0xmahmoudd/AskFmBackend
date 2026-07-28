@@ -58,15 +58,21 @@ apiClient.interceptors.response.use(
 );
 
 export const parseApiError = (error) => {
+  if (!error) return 'An unexpected error occurred.';
+  if (typeof error === 'string') return error;
   if (!error.response) {
-    return 'Network error. Please check backend connection.';
+    return error.message || 'Network error. Please check backend connection.';
   }
   const data = error.response.data;
   if (typeof data === 'string') return data;
   if (Array.isArray(data)) return data.join(', ');
-  if (data?.message) return data.message;
+  if (data?.message) return typeof data.message === 'string' ? data.message : JSON.stringify(data.message);
   if (data?.Errors && Array.isArray(data.Errors)) return data.Errors.join(', ');
-  return 'An unexpected error occurred.';
+  if (data?.errors) {
+    if (Array.isArray(data.errors)) return data.errors.join(', ');
+    if (typeof data.errors === 'object') return Object.values(data.errors).flat().join(', ');
+  }
+  return error.message || 'An unexpected error occurred.';
 };
 
 export default apiClient;

@@ -60,7 +60,11 @@ namespace AskFm.API.Controllers
             {
                 var userId = GetCurrentUserId();
                 var result = await _notificationService.MarkNotificationAsRead(notificationId, userId);
-                return Ok(new { message = result });
+                if (!result.success)
+                {
+                    return BadRequest(result.Errors);
+                }
+                return Ok(new { message = result.Data });
             }
             catch (InvalidOperationException ex)
             {
@@ -83,7 +87,11 @@ namespace AskFm.API.Controllers
             {
                 var userId = GetCurrentUserId();
                 var result = await _notificationService.MarkAllNotificationsAsRead(userId);
-                return Ok(new { message = result });
+                if (!result.success)
+                {
+                    return BadRequest(result.Errors);
+                }
+                return Ok(new { message = result.Data });
             }
             catch (Exception ex)
             {

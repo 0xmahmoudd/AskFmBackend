@@ -56,11 +56,13 @@ export const NotificationsPage = () => {
   }, [fetchNotifications]);
 
   const handleMarkRead = async (e, id) => {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
+    setUnreadCount((prev) => Math.max(0, prev - 1));
+    setNotifications((prev) =>
+      prev.map((n) => ((n.id || n.Id) === id ? { ...n, isRead: true, IsRead: true } : n))
+    );
     try {
       await markNotificationAsRead(id);
-      setUnreadCount((prev) => Math.max(0, prev - 1));
-      fetchNotifications();
       fetchUnreadCount();
     } catch (err) {
       addToast(parseApiError(err), 'error');
@@ -68,11 +70,13 @@ export const NotificationsPage = () => {
   };
 
   const handleMarkAllRead = async () => {
+    setUnreadCount(0);
+    setNotifications((prev) =>
+      prev.map((n) => ({ ...n, isRead: true, IsRead: true }))
+    );
     try {
       await markAllNotificationsAsRead();
-      setUnreadCount(0);
       addToast('All notifications marked as read', 'success');
-      fetchNotifications();
       fetchUnreadCount();
     } catch (err) {
       addToast(parseApiError(err), 'error');
