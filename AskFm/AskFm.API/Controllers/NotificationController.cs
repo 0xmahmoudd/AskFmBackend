@@ -9,7 +9,7 @@ namespace AskFm.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     public class NotificationController : ControllerBase
     {
         private readonly INotificationService _notificationService;
@@ -101,7 +101,7 @@ namespace AskFm.API.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin", AuthenticationSchemes = "Bearer")]
         public async Task<IActionResult> CreateNotification([FromBody] CreateNotificationRequest request)
         {
             try
@@ -117,8 +117,9 @@ namespace AskFm.API.Controllers
 
         private int GetCurrentUserId()
         {
-            // Use the standard NameIdentifier claim
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("UserId")?.Value;
+
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
             {
                 throw new UnauthorizedAccessException("Invalid user token");

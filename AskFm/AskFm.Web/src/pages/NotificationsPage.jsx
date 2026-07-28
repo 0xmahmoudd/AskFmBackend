@@ -59,6 +59,7 @@ export const NotificationsPage = () => {
     e.stopPropagation();
     try {
       await markNotificationAsRead(id);
+      setUnreadCount((prev) => Math.max(0, prev - 1));
       fetchNotifications();
       fetchUnreadCount();
     } catch (err) {
@@ -69,6 +70,7 @@ export const NotificationsPage = () => {
   const handleMarkAllRead = async () => {
     try {
       await markAllNotificationsAsRead();
+      setUnreadCount(0);
       addToast('All notifications marked as read', 'success');
       fetchNotifications();
       fetchUnreadCount();
