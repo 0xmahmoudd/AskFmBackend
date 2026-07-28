@@ -68,7 +68,11 @@ export const getFollowStatus = async (targetUserId) => {
 };
 
 export const updatePassword = async (userId, data) => {
-  const response = await apiClient.post(`/User/profile/update/pass/${userId}`, data);
+  const payload = {
+    currentPassword: data.oldPassword || data.currentPassword,
+    updatedPassword: data.newPassword || data.updatedPassword,
+  };
+  const response = await apiClient.post(`/User/profile/update/pass/${userId}`, payload);
   return response.data;
 };
 

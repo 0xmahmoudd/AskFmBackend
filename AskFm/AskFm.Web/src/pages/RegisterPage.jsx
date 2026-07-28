@@ -7,6 +7,7 @@ export const RegisterPage = () => {
   const { register, authError } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [bio, setBio] = useState('');
@@ -17,7 +18,7 @@ export const RegisterPage = () => {
     if (!name || !email || !password) return;
 
     setLoading(true);
-    const result = await register({ name, email, password, bio });
+    const result = await register({ name, username, email, password, bio });
     setLoading(false);
     if (result.success) {
       navigate('/');
@@ -49,6 +50,17 @@ export const RegisterPage = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Username</label>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="johndoe"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
             />
           </div>
 

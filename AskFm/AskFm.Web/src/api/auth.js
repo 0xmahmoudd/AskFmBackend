@@ -1,12 +1,25 @@
 import apiClient from './client';
 
 export const registerUser = async (data) => {
-  const response = await apiClient.post('/Auth/register', data);
+  const payload = {
+    name: data.name,
+    username: data.username || data.name.replace(/\s+/g, '_').toLowerCase() || data.email.split('@')[0],
+    email: data.email,
+    bio: data.bio || '',
+    avatarPath: data.avatarPath || 'default.jpg',
+    passwrod: data.password || data.passwrod,
+    lastSeen: new Date().toISOString(),
+  };
+  const response = await apiClient.post('/Auth/register', payload);
   return response.data;
 };
 
 export const loginUser = async (data) => {
-  const response = await apiClient.post('/Auth/login', data);
+  const payload = {
+    email: data.email,
+    password: data.password,
+  };
+  const response = await apiClient.post('/Auth/login', payload);
   return response.data;
 };
 
@@ -26,7 +39,13 @@ export const forgotPassword = async (email) => {
 };
 
 export const resetPassword = async (data) => {
-  const response = await apiClient.post('/Auth/reset-password', data);
+  const payload = {
+    email: data.email,
+    token: data.token,
+    newPassword: data.newPassword,
+    confirmPassword: data.confirmPassword || data.newPassword,
+  };
+  const response = await apiClient.post('/Auth/reset-password', payload);
   return response.data;
 };
 
