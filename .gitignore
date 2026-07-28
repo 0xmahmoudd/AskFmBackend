@@ -155,3 +155,6 @@ orleans.codegen.cs
 *.sln.iml
 .idea
 
+
+
+*.txt

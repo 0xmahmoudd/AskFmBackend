@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
+using AskFm.BLL.Services;
+
 namespace AskFm.API.Controllers;
 
 [ApiController]
@@ -11,10 +13,14 @@ namespace AskFm.API.Controllers;
 public class SeedController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IThreadService _threadService;
+    private readonly INotificationService _notificationService;
 
-    public SeedController(AppDbContext context)
+    public SeedController(AppDbContext context, IThreadService threadService, INotificationService notificationService)
     {
         _context = context;
+        _threadService = threadService;
+        _notificationService = notificationService;
     }
 
     [HttpPost("stress-test")]
@@ -115,35 +121,14 @@ public class SeedController : ControllerBase
     {
         var sw = Stopwatch.StartNew();
         
-        // This simulates exactly what GetFeed does, but bypassing auth to easily measure
-        int pageSize = 10;
-        var followedUserIds = await _context.Follows.Where(f => f.FollowerId == userId).Select(f => f.FollowedId).ToListAsync();
-        followedUserIds.Add(userId);
-
-        var threads = await _context.Threads
-            .Include(t => t.Asker)
-            .Include(t => t.Asked)
-            .Include(t => t.Comments)
-            .Include(t => t.ThreadLikes)
-            .Where(t => followedUserIds.Contains(t.AskedId) && t.Status == AskFm.DAL.Enums.ThreadStatus.Answered)
-            .OrderByDescending(t => t.CreatedAt)
-            .Take(pageSize + 1)
-            .ToListAsync();
-
-        var trimmed = threads.Take(pageSize).ToList();
-        var threadDtos = trimmed.Select(t => new 
-        {
-            t.Id,
-            LikesCount = t.ThreadLikes?.Count ?? 0,
-            CommentsCount = t.Comments?.Count ?? 0
-        }).ToList();
-
+        var result = await _threadService.GetFeed(userId, 1, 10);
+        
         sw.Stop();
         
         return Ok(new { 
             timeTakenMs = sw.ElapsedMilliseconds,
-            threadsReturned = threadDtos.Count,
-            data = threadDtos
+            threadsReturned = result.Data?.Items?.Count ?? 0,
+            data = result.Data?.Items
         });
     }
     [HttpGet("test-thread")]
@@ -151,25 +136,13 @@ public class SeedController : ControllerBase
     {
         var sw = Stopwatch.StartNew();
         
-        var thread = await _context.Threads
-            .Include(t => t.Asker)
-            .Include(t => t.Asked)
-            .Include(t => t.Comments)
-            .Include(t => t.ThreadLikes)
-            .FirstOrDefaultAsync(t => t.Id == threadId && !t.IsDeleted);
-
-        var dto = new
-        {
-            thread?.Id,
-            LikesCount = thread?.ThreadLikes?.Count ?? 0,
-            CommentsCount = thread?.Comments?.Count ?? 0
-        };
+        var result = await _threadService.GetThreadById(threadId);
 
         sw.Stop();
         
         return Ok(new { 
             timeTakenMs = sw.ElapsedMilliseconds,
-            data = dto
+            data = result.Data
         });
     }
 
@@ -178,39 +151,14 @@ public class SeedController : ControllerBase
     {
         var sw = Stopwatch.StartNew();
         
-        var notifications = await _context.Notifications
-            .Where(n => n.UserId == userId)
-            .OrderByDescending(n => n.CreatedAt)
-            .Take(10)
-            .ToListAsync();
-
-        var notificationDtos = new List<object>();
-
-        foreach (var notification in notifications)
-        {
-            // Simulate what GetActorUserByResourceId does (N+1)
-            ApplicationUser actorUser = null;
-            if (notification.Type == AskFm.DAL.Enums.NotificationStatus.FOLLOW)
-            {
-                var follow = await _context.Follows.Include(f => f.Follower).FirstOrDefaultAsync(f => f.FollowedId == notification.ResourceId);
-                actorUser = follow?.Follower;
-            }
-            // other types omitted for brevity
-
-            notificationDtos.Add(new 
-            {
-                notification.Id,
-                notification.Message,
-                ActorName = actorUser?.UserName ?? "Unknown"
-            });
-        }
+        var result = await _notificationService.GetUserNotifications(userId, 1, 10);
 
         sw.Stop();
         
         return Ok(new { 
             timeTakenMs = sw.ElapsedMilliseconds,
-            count = notificationDtos.Count,
-            data = notificationDtos
+            count = result.Data?.Count ?? 0,
+            data = result.Data
         });
     }
 }
