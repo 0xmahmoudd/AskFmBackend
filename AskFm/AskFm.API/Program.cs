@@ -41,12 +41,6 @@ public class Program
         Env.Load();
         string ConnectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") 
             ?? builder.Configuration.GetConnectionString("DefaultConnection");
-        
-        // For testing, force local DB if the environment variable points to a failing remote
-        if (ConnectionString != null && ConnectionString.Contains("site4now.net"))
-        {
-            ConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-        }
 
         if (ConnectionString is null)
         {
