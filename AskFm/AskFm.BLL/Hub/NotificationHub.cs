@@ -6,7 +6,7 @@ using AskFm.BLL.Services;
 
 namespace AskFm.BLL.Hub
 {
-    [Authorize]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     public class NotificationHub : Microsoft.AspNetCore.SignalR.Hub
     {
         private readonly IServiceProvider _serviceProvider;

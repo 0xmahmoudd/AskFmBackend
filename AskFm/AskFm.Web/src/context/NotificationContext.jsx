@@ -41,6 +41,7 @@ export const NotificationProvider = ({ children }) => {
         (newNotif) => {
           setUnreadCount((prev) => prev + 1);
           addToast(newNotif.message || 'New notification received!', 'info');
+          window.dispatchEvent(new CustomEvent('askfm_notification', { detail: newNotif }));
         },
         (count) => {
           setUnreadCount(count);

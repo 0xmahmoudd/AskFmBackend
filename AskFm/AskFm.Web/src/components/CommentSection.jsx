@@ -43,6 +43,16 @@ export const CommentSection = ({ threadId }) => {
 
   useEffect(() => {
     fetchComments();
+
+    const handleNotification = (e) => {
+      const notif = e.detail;
+      if (!notif || notif.type === 'REPLAY' || notif.Type === 'REPLAY' || notif.type === 'COMMENT_LIKE' || notif.Type === 'COMMENT_LIKE') {
+        fetchComments();
+      }
+    };
+
+    window.addEventListener('askfm_notification', handleNotification);
+    return () => window.removeEventListener('askfm_notification', handleNotification);
   }, [fetchComments]);
 
   const handleAddComment = async (e) => {

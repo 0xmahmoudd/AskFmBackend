@@ -44,6 +44,13 @@ export const NotificationsPage = () => {
 
   useEffect(() => {
     fetchNotifications();
+
+    const handleNotification = () => {
+      fetchNotifications();
+    };
+
+    window.addEventListener('askfm_notification', handleNotification);
+    return () => window.removeEventListener('askfm_notification', handleNotification);
   }, [fetchNotifications]);
 
   const handleMarkRead = async (id) => {

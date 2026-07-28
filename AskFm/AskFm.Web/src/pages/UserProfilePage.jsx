@@ -91,7 +91,15 @@ export const UserProfilePage = () => {
 
   useEffect(() => {
     fetchTabData();
-  }, [fetchTabData]);
+
+    const handleNotification = () => {
+      fetchProfileData();
+      fetchTabData();
+    };
+
+    window.addEventListener('askfm_notification', handleNotification);
+    return () => window.removeEventListener('askfm_notification', handleNotification);
+  }, [fetchTabData, fetchProfileData]);
 
   const handleToggleFollow = async () => {
     const followerId = currentUser?.id || currentUser?.Id;

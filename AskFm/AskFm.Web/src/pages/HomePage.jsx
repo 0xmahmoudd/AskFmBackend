@@ -37,6 +37,13 @@ export const HomePage = () => {
 
   useEffect(() => {
     fetchFeed();
+
+    const handleNotification = () => {
+      fetchFeed();
+    };
+
+    window.addEventListener('askfm_notification', handleNotification);
+    return () => window.removeEventListener('askfm_notification', handleNotification);
   }, [fetchFeed]);
 
   return (

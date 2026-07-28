@@ -45,6 +45,16 @@ export const InboxPage = () => {
 
   useEffect(() => {
     fetchInbox();
+
+    const handleNotification = (e) => {
+      const notif = e.detail;
+      if (!notif || notif.type === 'QUESTION' || notif.Type === 'QUESTION' || notif.type === 'ANSWER' || notif.Type === 'ANSWER') {
+        fetchInbox();
+      }
+    };
+
+    window.addEventListener('askfm_notification', handleNotification);
+    return () => window.removeEventListener('askfm_notification', handleNotification);
   }, [fetchInbox]);
 
   return (
