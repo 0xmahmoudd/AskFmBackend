@@ -39,14 +39,19 @@ public class UserController : ControllerBase
         {
             return BadRequest(result.Errors);
         }
+        var userId = result.Data.Id;
+        var followersCount = await _unitOfWork.Follows.CountAsync(f => f.FollowedId == userId && !f.IsDeleted && f.IsActive);
+        var followingCount = await _unitOfWork.Follows.CountAsync(f => f.FollowerId == userId && !f.IsDeleted && f.IsActive);
+
         ReadUserDTO readUserDTO = new ReadUserDTO()
         {
-            Id = result.Data.Id,
+            Id = userId,
             Name = result.Data.Name,
             Email = result.Data.Email,
             AvatarPath = result.Data.AvatarPath,
             Bio = result.Data.Bio,
-            followerCount = result.Data.FollowersCount,
+            followerCount = followersCount,
+            followingCount = followingCount,
             LastSeen = result.Data.LastSeen,
         };
         return Ok(readUserDTO);

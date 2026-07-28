@@ -156,9 +156,12 @@ public class NotificationRepository : INotificationRepository
 
     public async Task MarkAllAsReadAsync(int userId)
     {
-        var query = _unitOfWork.Notifications.GetAll(trackChanges: false)
-            .Where(n => n.UserId == userId && !n.IsRead);
-            
-        await query.ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true));
+        var notifications = await _unitOfWork.Notifications.FindAll(n => n.UserId == userId && !n.IsRead).ToListAsync();
+        foreach (var n in notifications)
+        {
+            n.IsRead = true;
+            _unitOfWork.Notifications.Update(n);
+        }
+        await _unitOfWork.SaveAsync();
     }
 }

@@ -214,6 +214,9 @@ public class UserService : IUserService
         var res = await CheckNullObjectAsync<ReadUserDTO, ApplicationUser>(user);
         if (!res.success) return res;
 
+        var followersCount = await _unitOfWork.Follows.CountAsync(f => f.FollowedId == userId && !f.IsDeleted && f.IsActive);
+        var followingCount = await _unitOfWork.Follows.CountAsync(f => f.FollowerId == userId && !f.IsDeleted && f.IsActive);
+
         return await ServiceResult<ReadUserDTO>.Success(new ReadUserDTO()
         {
             Id = user.Id,
@@ -222,7 +225,8 @@ public class UserService : IUserService
             LastSeen = user.LastSeen,
             Bio = user.Bio,
             AvatarPath = user.AvatarPath,
-            followerCount = user.FollowersCount
+            followerCount = followersCount,
+            followingCount = followingCount
         });
     }
 

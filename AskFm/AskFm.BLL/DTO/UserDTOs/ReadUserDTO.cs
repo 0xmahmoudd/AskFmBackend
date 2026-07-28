@@ -9,4 +9,5 @@ public class ReadUserDTO
     public string Bio { get; set; }
     public string AvatarPath { get; set; }
     public int followerCount { get; set; }
+    public int followingCount { get; set; }
 }
