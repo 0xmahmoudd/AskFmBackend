@@ -116,7 +116,14 @@ public class AuthService : IAuthService
 
         }
 
-        await SendEmailConfirmationAsync(newUser.Email);
+        try
+        {
+            await SendEmailConfirmationAsync(newUser.Email);
+        }
+        catch (Exception)
+        {
+            // Email sending failed (e.g. SMTP not configured) — continue registration
+        }
 
         var response = await GetAuthToken(newUser);
         return response;
