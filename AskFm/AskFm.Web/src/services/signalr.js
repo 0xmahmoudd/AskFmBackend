@@ -2,7 +2,7 @@ import * as signalR from '@microsoft/signalr';
 
 let hubConnection = null;
 
-export const initSignalR = (onReceiveNotification) => {
+export const initSignalR = (onReceiveNotification, onUnreadCountUpdated) => {
   const token = localStorage.getItem('accessToken');
   if (!token) return null;
 
@@ -20,6 +20,12 @@ export const initSignalR = (onReceiveNotification) => {
   hubConnection.on('ReceiveNotification', (notification) => {
     if (onReceiveNotification) {
       onReceiveNotification(notification);
+    }
+  });
+
+  hubConnection.on('UnreadCountUpdated', (count) => {
+    if (onUnreadCountUpdated !== undefined && onUnreadCountUpdated !== null) {
+      onUnreadCountUpdated(count);
     }
   });
 

@@ -351,6 +351,7 @@ public class AuthService : IAuthService
             {
                 new(ClaimTypes.Name, appUser.Name),
                 new(ClaimTypes.Email, appUser.Email),
+                new(ClaimTypes.NameIdentifier, appUser.Id.ToString()),
                 new("UserId", appUser.Id.ToString()),
                 new("jti",jti)
             })

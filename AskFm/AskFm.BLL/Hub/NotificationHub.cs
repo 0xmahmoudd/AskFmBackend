@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,13 @@ namespace AskFm.BLL.Hub
             _serviceProvider = serviceProvider;
         }
 
+        private string? GetUserId()
+        {
+            return Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? Context.User?.FindFirst("UserId")?.Value
+                ?? Context.UserIdentifier;
+        }
+
         public async Task JoinUserGroup(string userId)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, $"user_{userId}");
@@ -27,8 +35,7 @@ namespace AskFm.BLL.Hub
 
         public override async Task OnConnectedAsync()
         {
-            // Auto-join user to their group based on their ID from JWT token
-            var userId = Context.UserIdentifier;
+            var userId = GetUserId();
             if (!string.IsNullOrEmpty(userId) && int.TryParse(userId, out int uid))
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, $"user_{userId}");
@@ -46,7 +53,7 @@ namespace AskFm.BLL.Hub
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            var userId = Context.UserIdentifier;
+            var userId = GetUserId();
             if (!string.IsNullOrEmpty(userId))
             {
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"user_{userId}");

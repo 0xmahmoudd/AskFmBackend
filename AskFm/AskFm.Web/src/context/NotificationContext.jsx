@@ -37,10 +37,15 @@ export const NotificationProvider = ({ children }) => {
     if (isAuthenticated) {
       fetchUnreadCount();
 
-      const connection = initSignalR((newNotif) => {
-        setUnreadCount((prev) => prev + 1);
-        addToast(newNotif.message || 'New notification received!', 'info');
-      });
+      const connection = initSignalR(
+        (newNotif) => {
+          setUnreadCount((prev) => prev + 1);
+          addToast(newNotif.message || 'New notification received!', 'info');
+        },
+        (count) => {
+          setUnreadCount(count);
+        }
+      );
 
       return () => {
         stopSignalR();
