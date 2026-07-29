@@ -1,8 +1,17 @@
-# AskFm Backend
+# AskFm Full-Stack Platform
 
-A fully-featured backend API for an anonymous Q&A platform inspired by Ask.fm. Built with modern .NET 9, this application follows a clean 3-tier architecture and provides robust features including real-time notifications, user moderation, and anonymous interactions.
+![ASP.NET](https://img.shields.io/badge/ASP.NET-Core%209-purple)
+![React](https://img.shields.io/badge/React-Frontend-61DAFB)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-##  Features
+A fully-featured full-stack anonymous Q&A platform inspired by Ask.fm. Built with a modern .NET backend Web API and a React frontend, this application follows a clean 3-tier architecture and provides robust features including real-time notifications, user moderation, and anonymous interactions.
+
+## Demo Video
+
+[Watch the AskFm Live Demo Video on YouTube](https://youtu.be/MUeUZzyzSoA?si=2UQhasBaNozVdtMS)
+
+## Features
 
 - **Authentication & Identity**: JWT-based authentication, refresh tokens, password reset, and email confirmation.
 - **Q&A Threads**: Ask questions (anonymously or publicly), answer questions, and toggle thread visibility.
@@ -11,30 +20,47 @@ A fully-featured backend API for an anonymous Q&A platform inspired by Ask.fm. B
 - **User Moderation**: Block and mute users to prevent harassment in anonymous environments.
 - **Caching**: Redis integration for high-performance token revocation and caching.
 - **Soft Delete**: System-wide soft-delete mechanism implemented via `ITrackable` entities and EF Core Global Query Filters.
+- **Full-Stack Application**: Includes both a RESTful API backend and a responsive React web interface.
 
-##  Architecture
+## Architecture
 
-The solution follows a classic 3-Tier architecture to enforce separation of concerns:
+The solution follows a clean 3-tier architecture with an integrated web client to enforce separation of concerns:
 - **`AskFm.API`**: The presentation layer containing Controllers, SignalR Hubs, and Middleware.
 - **`AskFm.BLL`**: The Business Logic Layer containing Services, DTOs, and custom business rules.
 - **`AskFm.DAL`**: The Data Access Layer containing EF Core DbContext, Models, Entity Configurations, and the Unit of Work / Repository pattern implementations.
+- **`AskFm.Web`**: The frontend web application built with React 19, Vite, React Router, and Axios.
 - **`Shared`**: Common constants and utilities shared across layers.
 
-##  Technology Stack
+## Technology Stack
 
+### Backend
 - **Framework**: .NET 9.0 (ASP.NET Core Web API)
 - **Database**: SQL Server & Entity Framework Core
-- **Real-time**: SignalR
+- **Real-time**: SignalR Hubs
 - **Caching**: Redis
 - **Authentication**: ASP.NET Core Identity & JWT Bearer
-- **Email**: SMTP integration (e.g., SendGrid/Gmail)
+- **Email**: SMTP integration
 
-##  Prerequisites
+### Frontend
+- **Framework**: React 19 (JavaScript)
+- **Build Tool**: Vite
+- **Routing**: React Router
+- **HTTP Client**: Axios
+- **Icons**: Lucide React
+- **Styling**: Vanilla CSS Design System
+
+## Prerequisites
 
 Ensure you have the following installed on your machine:
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-- SQL Server (or SQL Server Express)
-- Redis Server (running on `localhost:6379` by default)
+
+1. **Backend Prerequisites**:
+   - [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+   - SQL Server (or SQL Server Express)
+   - Redis Server (running on `localhost:6379` by default)
+
+2. **Frontend Prerequisites**:
+   - [Node.js (v18+)](https://nodejs.org/) & npm
+   - Modern Web Browser (Google Chrome, Mozilla Firefox, Microsoft Edge) with WebSocket support
 
 ## Setup & Configuration
 
@@ -75,21 +101,39 @@ Ensure you have the following installed on your machine:
    dotnet ef database update -p AskFm.DAL -s AskFm.API
    ```
 
-##  Running the Application
+## Running the Application
 
-To run the application locally:
+To run the complete full-stack application locally, follow these exact steps:
 
+### Step 1: Start the Backend API
+Run from any directory in terminal 1:
 ```bash
-dotnet run --project AskFm.API
+dotnet run --project /home/mahmoud/Projects/AskFmBackend/AskFm/AskFm.API/AskFm.API.csproj
+```
+Or navigate to the project directory:
+```bash
+cd AskFm.API
+dotnet run
+```
+Once running, you can access the **Swagger UI** to explore and test the endpoints visually:
+- `http://localhost:5180/swagger`
+
+### Step 2: Start the Frontend Web Application
+Open terminal 2 and run:
+```bash
+cd /home/mahmoud/Projects/AskFmBackend/AskFm/AskFm.Web
+npm install
+npm run dev
 ```
 
-Once running, you can access the **Swagger UI** to explore and test the endpoints visually:
-- `https://localhost:<port>/swagger`
+### Step 3: Open the Web Application
+Open your web browser and navigate to:
+- `http://localhost:5173`
 
-##  API Endpoints Documentation
+## API Endpoints Documentation
 
 A complete breakdown of all available REST endpoints is provided in the [API_Documentation.md](./API_Documentation.md) file.
 
-## Example WorkFlows
-There is a some examples of some workflows that the user can do it
-[User_Flows.md](./User_Flows.md) file.
+## Example Workflows
+
+Examples of workflows that users can perform are documented in the [User_Flows.md](./User_Flows.md) file.
